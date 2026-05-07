@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1920, initial-scale=1" />
+<title>Hooks 教學 — 9 站 · Claude Code Engineer Meetup</title>
+<style>
+/* ============================================================
+   Claude (Anthropic) design system tokens
+   ============================================================ */
+:root {
+  --bg:           #f5f4ed;
+  --surface:      #faf9f5;
+  --white:        #ffffff;
+  --warm-sand:    #e8e6dc;
+  --dark-surface: #30302e;
+  --deep-dark:    #141413;
+
+  --fg:           #141413;
+  --fg-warm:      #3d3d3a;
+  --charcoal:     #4d4c48;
+  --olive:        #5e5d59;
+  --stone:        #87867f;
+  --warm-silver:  #b0aea5;
+
+  --terracotta:   #c96442;
+  --coral:        #d97757;
+  --crimson:      #b53333;
+  --focus:        #3898ec;
+
+  --border-cream: #f0eee6;
+  --border-warm:  #e8e6dc;
+  --border-dark:  #30302e;
+  --ring-warm:    #d1cfc5;
+  --ring-deep:    #c2c0b6;
+
+  --font-display: "Iowan Old Style", "Charter", Georgia, "Songti SC", "PingFang TC", serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Segoe UI", system-ui, sans-serif;
+  --font-mono:    ui-monospace, "JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, monospace;
+
+  --slide-w: 1920px;
+  --slide-h: 1080px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: #1a1a18;
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.deck {
+  width: var(--slide-w);
+  height: var(--slide-h);
+  position: relative;
+  transform-origin: center center;
+  background: var(--bg);
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  width: var(--slide-w);
+  height: var(--slide-h);
+  display: none;
+  padding: 80px 96px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+}
+.slide.active { display: flex; flex-direction: column; }
+.slide.dark   { background: var(--deep-dark); color: var(--surface); }
+
+body.vmode {
+  overflow: auto;
+  background: var(--bg);
+}
+body.vmode .stage {
+  position: static;
+  display: block;
+  overflow: visible;
+}
+body.vmode .deck {
+  width: 100%;
+  max-width: 1280px;
+  height: auto;
+  margin: 0 auto;
+  transform: none !important;
+  background: transparent;
+}
+body.vmode .slide {
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  min-height: 80vh;
+  padding: 80px 64px;
+  margin: 0 auto 32px;
+  border-bottom: 1px solid var(--border-cream);
+  scroll-margin-top: 64px;
+}
+body.vmode .slide.dark { border-bottom-color: var(--dark-surface); }
+body.vmode .chrome { display: none !important; }
+body.vmode .vmode-anchor { display: block; }
+
+.vmode-anchor { display: none; font: 500 12px/1 var(--font-mono); letter-spacing: 0.12em; color: var(--stone); margin-bottom: 24px; }
+.slide.dark .vmode-anchor { color: var(--warm-silver); }
+
+.h-hero { font: 500 96px/1.05 var(--font-display); letter-spacing: -0.01em; }
+.h-xl   { font: 500 72px/1.10 var(--font-display); letter-spacing: -0.005em; }
+.h-lg   { font: 500 52px/1.15 var(--font-display); }
+.h-md   { font: 500 36px/1.2  var(--font-display); }
+.h-sm   { font: 500 28px/1.25 var(--font-display); }
+.h-xs   { font: 500 22px/1.3  var(--font-display); }
+
+.lead   { font: 400 24px/1.5 var(--font-body); color: var(--olive); }
+.body   { font: 400 18px/1.6 var(--font-body); color: var(--fg-warm); }
+.body-sm{ font: 400 16px/1.55 var(--font-body); color: var(--olive); }
+
+.kicker {
+  font: 500 13px/1.2 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+}
+.slide.dark .kicker { color: var(--coral); }
+
+.meta {
+  font: 400 13px/1.3 var(--font-mono);
+  letter-spacing: 0.05em;
+  color: var(--stone);
+}
+
+.accent { color: var(--terracotta); }
+.slide.dark .accent { color: var(--coral); }
+
+mark.hl {
+  background: rgba(201,100,66,0.18);
+  color: inherit;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+.slide.dark mark.hl { background: rgba(217,119,87,0.22); }
+
+.chrome {
+  position: absolute;
+  left: 96px;
+  right: 96px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 400 13px/1.4 var(--font-mono);
+  letter-spacing: 0.05em;
+  color: var(--stone);
+  pointer-events: none;
+}
+.chrome.top    { top: 36px; }
+.chrome.bottom { bottom: 36px; }
+.chrome b { color: var(--fg); font-weight: 500; }
+.slide.dark .chrome b { color: var(--surface); }
+.slide.dark .chrome   { color: var(--warm-silver); }
+
+.dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--ring-deep);
+  border-radius: 50%;
+  margin: 0 10px;
+  vertical-align: middle;
+}
+.slide.dark .dot { background: var(--dark-surface); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-cream);
+  border-radius: 12px;
+  padding: 28px 32px;
+}
+.slide.dark .card {
+  background: var(--dark-surface);
+  border-color: var(--dark-surface);
+}
+.card-elevated {
+  background: var(--surface);
+  border: 1px solid var(--border-warm);
+  border-radius: 16px;
+  padding: 32px 36px;
+  box-shadow: rgba(0,0,0,0.05) 0px 4px 24px;
+}
+.slide.dark .card-elevated {
+  background: var(--dark-surface);
+  border-color: var(--dark-surface);
+  box-shadow: rgba(0,0,0,0.4) 0px 4px 24px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-warm);
+  border-radius: 999px;
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  background: var(--surface);
+}
+.tag.live {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: var(--surface);
+}
+.tag.live::before {
+  content: "";
+  width: 8px; height: 8px;
+  background: var(--surface);
+  border-radius: 50%;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.tag.pre  { background: rgba(201,100,66,0.12); border-color: rgba(201,100,66,0.3); color: var(--terracotta); }
+.tag.post { background: rgba(56,152,236,0.10); border-color: rgba(56,152,236,0.3); color: var(--focus); }
+.slide.dark .tag {
+  background: var(--dark-surface);
+  border-color: var(--dark-surface);
+  color: var(--warm-silver);
+}
+.slide.dark .tag.pre  { background: rgba(217,119,87,0.18); color: var(--coral); border-color: transparent; }
+.slide.dark .tag.post { background: rgba(56,152,236,0.18); color: #6db4f5; border-color: transparent; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+
+.code {
+  font: 400 15px/1.65 var(--font-mono);
+  letter-spacing: -0.01em;
+  background: var(--deep-dark);
+  color: #e8e6dc;
+  padding: 20px 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  white-space: pre;
+  position: relative;
+  box-shadow: rgba(0,0,0,0.05) 0px 4px 24px;
+}
+.code.light {
+  background: var(--surface);
+  border: 1px solid var(--border-cream);
+  color: var(--fg);
+  box-shadow: none;
+}
+.slide.dark .code.light { background: #1f1f1d; border-color: var(--dark-surface); color: #e8e6dc; }
+.code .lang-tag {
+  position: absolute; top: 10px; right: 14px;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+.code .ann { color: var(--coral); font-style: italic; }
+
+.tok-key   { color: #c0caf5; }
+.tok-str   { color: #a3d2a3; }
+.tok-num   { color: #f5c98a; }
+.tok-bool  { color: #f5a97f; }
+.tok-kw    { color: #d97757; font-weight: 500; }
+.tok-fn    { color: #f5c98a; }
+.tok-com   { color: #6c6c68; font-style: italic; }
+.tok-prop  { color: #c0caf5; }
+.tok-punct { color: #87867f; }
+.tok-tag   { color: #d97757; }
+.tok-var   { color: #b8e0d2; }
+
+.code.light .tok-key   { color: #2a4d8e; }
+.code.light .tok-str   { color: #2d6a4f; }
+.code.light .tok-num   { color: #b35900; }
+.code.light .tok-bool  { color: #b53333; }
+.code.light .tok-kw    { color: #c96442; font-weight: 600; }
+.code.light .tok-fn    { color: #8a4a00; }
+.code.light .tok-com   { color: #87867f; }
+.code.light .tok-prop  { color: #2a4d8e; }
+.code.light .tok-punct { color: #5e5d59; }
+.code.light .tok-tag   { color: #c96442; }
+.code.light .tok-var   { color: #2d6a4f; }
+
+.qa-panel {
+  margin-top: auto;
+  flex-shrink: 0;
+  border-top: 1px dashed var(--border-warm);
+  padding-top: 12px;
+  padding-bottom: 4px;
+  margin-bottom: 24px;
+}
+.slide.dark .qa-panel { border-top-color: var(--dark-surface); }
+
+.qa-panel summary {
+  cursor: default;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  padding: 6px 12px;
+  background: var(--warm-sand);
+  border-radius: 999px;
+  user-select: none;
+  pointer-events: none;
+}
+.qa-panel summary::-webkit-details-marker { display: none; }
+.slide.dark .qa-panel summary {
+  background: var(--dark-surface);
+  color: var(--warm-silver);
+}
+
+.qa-content {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px 18px;
+  animation: fadeUp 0.3s ease;
+}
+.qa-item {
+  background: var(--surface);
+  border: 1px solid var(--border-cream);
+  border-radius: 8px;
+  padding: 11px 14px;
+}
+.slide.dark .qa-item {
+  background: rgba(255,255,255,0.02);
+  border-color: var(--dark-surface);
+}
+.qa-q { font: 500 13px/1.4 var(--font-body); color: var(--fg); margin-bottom: 4px; }
+.qa-q::before { content: "Q · "; color: var(--terracotta); font-family: var(--font-mono); font-weight: 500; }
+.qa-a { font: 400 13px/1.5 var(--font-body); color: var(--olive); }
+.qa-a::before { content: "A · "; color: var(--charcoal); font-family: var(--font-mono); font-weight: 500; }
+.slide.dark .qa-q { color: var(--surface); }
+.slide.dark .qa-q::before { color: var(--coral); }
+.slide.dark .qa-a { color: var(--warm-silver); }
+.slide.dark .qa-a::before { color: var(--warm-silver); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.slide.active .anim-fade-up   { animation: fadeUp 0.5s 0.05s both ease-out; }
+.slide.active .anim-fade-in   { animation: fadeIn 0.6s 0.2s both ease-out; }
+.slide.active .anim-stagger > *      { animation: fadeUp 0.45s both ease-out; }
+.slide.active .anim-stagger > *:nth-child(1) { animation-delay: 0.10s; }
+.slide.active .anim-stagger > *:nth-child(2) { animation-delay: 0.18s; }
+.slide.active .anim-stagger > *:nth-child(3) { animation-delay: 0.26s; }
+.slide.active .anim-stagger > *:nth-child(4) { animation-delay: 0.34s; }
+.slide.active .anim-stagger > *:nth-child(5) { animation-delay: 0.42s; }
+.slide.active .anim-stagger > *:nth-child(6) { animation-delay: 0.50s; }
+.slide.active .anim-stagger > *:nth-child(7) { animation-delay: 0.58s; }
+.slide.active .anim-stagger > *:nth-child(8) { animation-delay: 0.66s; }
+.slide.active .anim-stagger > *:nth-child(9) { animation-delay: 0.74s; }
+.slide.active .anim-delayed   { animation: fadeUp 0.5s 0.6s both ease-out; }
+
+.row    { display: flex; gap: 32px; }
+.col    { display: flex; flex-direction: column; gap: 20px; }
+.grow   { flex: 1; min-width: 0; }
+.center { display: grid; place-items: center; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.grid-2-1{ display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
+.grid-1-2{ display: grid; grid-template-columns: 1fr 2fr; gap: 32px; }
+
+.divider {
+  height: 1px;
+  background: var(--border-warm);
+  margin: 24px 0;
+}
+.slide.dark .divider { background: var(--dark-surface); }
+
+.list-clean {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.list-clean li {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  font: 400 18px/1.5 var(--font-body);
+  color: var(--fg-warm);
+}
+.slide.dark .list-clean li { color: var(--warm-silver); }
+.list-clean li::before {
+  content: "·";
+  color: var(--terracotta);
+  font: 700 28px/0.6 var(--font-display);
+  flex-shrink: 0;
+  width: 12px;
+}
+.slide.dark .list-clean li::before { color: var(--coral); }
+
+.notes { display: none; }
+body.vmode .notes {
+  display: block;
+  margin-top: 32px;
+  padding: 24px 28px;
+  background: var(--warm-sand);
+  border-left: 3px solid var(--terracotta);
+  border-radius: 0 8px 8px 0;
+  font: 400 16px/1.7 var(--font-body);
+  color: var(--charcoal);
+}
+body.vmode .slide.dark .notes {
+  background: rgba(255,255,255,0.04);
+  color: var(--warm-silver);
+  border-left-color: var(--coral);
+}
+body.vmode .notes::before {
+  content: "Speaker notes";
+  display: block;
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 12px;
+}
+body.vmode .slide.dark .notes::before { color: var(--coral); }
+
+.hud {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  background: rgba(20,20,19,0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 999px;
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--warm-silver);
+  z-index: 100;
+  user-select: none;
+}
+.hud .key {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--dark-surface);
+  border: 1px solid #404040;
+  border-radius: 4px;
+  font: 500 10px/1 var(--font-mono);
+  color: var(--surface);
+  margin-right: 6px;
+}
+.hud button {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.hud button:hover { background: var(--dark-surface); }
+.hud .pos { color: var(--surface); font-weight: 600; }
+body.vmode .hud { display: none; }
+
+.index-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,20,19,0.96);
+  display: none;
+  place-items: center;
+  z-index: 200;
+  padding: 60px;
+}
+.index-overlay.active { display: grid; }
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 1400px;
+}
+.index-card {
+  background: var(--dark-surface);
+  border: 1px solid #3d3d3a;
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  color: var(--surface);
+  transition: all 0.2s ease;
+}
+.index-card:hover {
+  border-color: var(--coral);
+  transform: translateY(-2px);
+}
+.index-card .num {
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.2em;
+  color: var(--coral);
+  margin-bottom: 8px;
+}
+.index-card .name { font: 500 22px/1.3 var(--font-display); }
+.index-card .desc { font: 400 13px/1.5 var(--font-body); color: var(--warm-silver); margin-top: 8px; }
+
+.toc-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 56px;
+  margin-top: 56px;
+  list-style: none;
+}
+.toc-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-warm);
+}
+.toc-num {
+  font: 500 32px/1 var(--font-display);
+  color: var(--terracotta);
+  width: 48px;
+}
+.toc-name { font: 500 26px/1.3 var(--font-display); color: var(--fg); }
+.toc-tag  { font: 500 11px/1 var(--font-mono); letter-spacing: 0.15em; text-transform: uppercase; color: var(--stone); }
+.toc-tag.live { color: var(--terracotta); }
+
+.pp-card {
+  background: var(--surface);
+  border: 1px solid var(--border-warm);
+  border-radius: 12px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pp-card .pp-name { font: 500 32px/1.1 var(--font-display); color: var(--fg); }
+.pp-card .pp-desc { font: 400 17px/1.55 var(--font-body); color: var(--olive); }
+
+.step-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.step-cell {
+  background: var(--dark-surface);
+  border: 1px solid #3d3d3a;
+  border-radius: 8px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.step-cell .num {
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.18em;
+  color: var(--coral);
+}
+.step-cell .title { font: 500 20px/1.25 var(--font-display); color: var(--surface); }
+.step-cell .sub   { font: 400 13px/1.5 var(--font-body); color: var(--warm-silver); }
+
+.opp {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+.opp-panel {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 28px;
+  border-left: 3px solid var(--terracotta);
+}
+.opp-panel.right { border-left: none; border-right: 3px solid var(--coral); }
+.opp-panel .label { font: 500 12px/1 var(--font-mono); letter-spacing: 0.15em; text-transform: uppercase; color: var(--stone); margin-bottom: 12px; }
+.opp-panel .title { font: 500 22px/1.3 var(--font-display); color: var(--fg); margin-bottom: 12px; }
+.opp-panel ul { list-style: none; }
+.opp-panel li { padding: 6px 0; font: 400 15px/1.5 var(--font-body); color: var(--fg-warm); }
+.opp-panel li::before { content: "→ "; color: var(--terracotta); font-family: var(--font-mono); }
+.opp-arrow {
+  align-self: center;
+  font: 500 28px/1 var(--font-display);
+  color: var(--stone);
+  text-align: center;
+  width: 56px;
+}
+
+.flow3 {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 16px;
+}
+.flow3 .cell {
+  background: var(--surface);
+  border: 1px solid var(--border-cream);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 180px;
+}
+.flow3 .cell .label { font: 500 11px/1 var(--font-mono); letter-spacing: 0.15em; color: var(--stone); }
+.flow3 .cell .name  { font: 500 14px/1.3 var(--font-mono); color: var(--fg); }
+.flow3 .arr { align-self: center; color: var(--stone); font: 500 18px/1 var(--font-mono); }
+
+.live-bg { background: var(--deep-dark); color: var(--surface); }
+.live-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--terracotta);
+  color: var(--surface);
+  border-radius: 999px;
+  font: 500 14px/1 var(--font-mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.live-banner::before {
+  content: "";
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--surface);
+  border-radius: 50%;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.watch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+}
+.watch-item {
+  display: flex;
+  gap: 18px;
+  padding: 16px 20px;
+  background: var(--dark-surface);
+  border-radius: 8px;
+}
+.watch-num {
+  font: 500 24px/1 var(--font-display);
+  color: var(--coral);
+  width: 32px;
+  flex-shrink: 0;
+}
+.watch-text { font: 400 16px/1.5 var(--font-body); color: var(--warm-silver); }
+.watch-text b { color: var(--surface); font-weight: 600; }
+
+.event-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 32px;
+  margin-top: 16px;
+}
+.event-item {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--dark-surface);
+  align-items: baseline;
+}
+.event-name {
+  font: 500 15px/1 var(--font-mono);
+  color: var(--coral);
+}
+.event-desc {
+  font: 400 14px/1.4 var(--font-body);
+  color: var(--warm-silver);
+}
+.event-item.known .event-name { color: var(--surface); text-decoration: line-through; opacity: 0.5; }
+
+.callout-warn {
+  display: inline-flex;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(181,51,51,0.08);
+  border-left: 3px solid var(--crimson);
+  font: 400 14px/1.5 var(--font-body);
+  color: var(--charcoal);
+  border-radius: 0 6px 6px 0;
+}
+.slide.dark .callout-warn {
+  background: rgba(217,119,87,0.12);
+  border-left-color: var(--coral);
+  color: var(--warm-silver);
+}
+
+code.inline {
+  background: var(--warm-sand);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font: 400 0.92em/1 var(--font-mono);
+  color: var(--terracotta);
+}
+.slide.dark code.inline {
+  background: var(--dark-surface);
+  color: var(--coral);
+}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+
+<!-- Slide 0 — TOC -->
+<section class="slide active" data-screen-label="00 目錄">
+  <div class="chrome top">
+    <span><b>Hooks 教學</b><span class="dot"></span>9 站完整路線圖</span>
+    <span>Engineer Meetup · Day 1+2</span>
+  </div>
+  <div class="vmode-anchor">00 · 目錄</div>
+
+  <div class="anim-fade-up" style="margin-top: 60px;">
+    <div class="kicker">CONTENTS</div>
+    <h1 class="h-hero" style="margin-top: 16px;">Hook 教學 8 站</h1>
+    <p class="lead" style="margin-top: 16px; max-width: 1100px;">
+      從 harness Slide 11 那一句「<span class="accent">Pre 之前 / Post 之後</span>」展開,
+      8 站走完概念、語法、實作、坑、3 個 live demo、production 案例、其他 hook event。每站 3-5 分鐘。
+    </p>
+  </div>
+
+  <ul class="toc-list anim-stagger">
+    <li class="toc-item">
+      <span class="toc-num">1</span>
+      <span class="toc-name">Introducing hooks <span class="meta">— 概念</span></span>
+      <span class="toc-tag">CONCEPT</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">2</span>
+      <span class="toc-name">Defining hooks <span class="meta">— 語法骨架</span></span>
+      <span class="toc-tag">SYNTAX</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">3</span>
+      <span class="toc-name">Implementing a hook <span class="meta">— 第一個範例</span></span>
+      <span class="toc-tag">CODE</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">4</span>
+      <span class="toc-name">Gotchas around hooks <span class="meta">— 部署細節</span></span>
+      <span class="toc-tag">GOTCHA</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">5</span>
+      <span class="toc-name">init 示範</span>
+      <span class="toc-tag live">⚡ LIVE</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">6</span>
+      <span class="toc-name">read_hook 示範</span>
+      <span class="toc-tag live">⚡ LIVE</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">7</span>
+      <span class="toc-name">Useful hooks <span class="meta">— 兩個 production 案例</span></span>
+      <span class="toc-tag live">⚡ LIVE</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">8</span>
+      <span class="toc-name">Another useful hook <span class="meta">— 其他 hook event</span></span>
+      <span class="toc-tag">META</span>
+    </li>
+  </ul>
+
+  <div class="chrome bottom">
+    <span>每站 3-5 分鐘</span>
+    <span><b>00</b> / 09</span>
+  </div>
+
+  <aside class="notes">接下來 hook 段我們走 8 站。前 4 站是概念跟語法,第 5、6 站是兩個現場 demo — init 示範看 setup 怎麼跑,read_hook 示範看 hook 真的擋住模型。第 7 站再加一個 query_hook live demo 看 sub-Claude review。最後 7、8 站是進階案例跟其他 hook 類型。每站大概 3-5 分鐘。</aside>
+</section>
+
+<!-- Slide 1 — Introducing hooks -->
+<section class="slide" data-screen-label="01 Introducing hooks">
+  <div class="chrome top">
+    <span><b>Station 01</b><span class="dot"></span>Introducing hooks</span>
+    <span>Concept</span>
+  </div>
+  <div class="vmode-anchor">01 · Introducing hooks</div>
+
+  <div class="anim-fade-up">
+    <div class="kicker">STATION 01 · CONCEPT</div>
+    <h1 class="h-xl" style="margin-top: 12px;">Hook 是什麼?</h1>
+    <p class="lead" style="margin-top: 16px; max-width: 1200px;">
+      Hook = 在 Claude 動手用 tool <mark class="hl">之前</mark> 或 <mark class="hl">之後</mark>,插一段你寫的程式碼。
+    </p>
+  </div>
+
+  <div class="grid-2 anim-stagger" style="margin-top: 36px;">
+    <div class="pp-card">
+      <div><span class="tag pre">PreToolUse</span></div>
+      <div class="pp-name">Tool 跑之前</div>
+      <div class="pp-desc">可以擋下(<code class="inline">exit 2</code>)或放行。模型看不到 tool 結果,只看到你的 stderr 訊息。</div>
+    </div>
+    <div class="pp-card">
+      <div><span class="tag post">PostToolUse</span></div>
+      <div class="pp-name">Tool 跑之後</div>
+      <div class="pp-desc">擋不了,但可以加工(format / lint)或把結果丟回去給模型參考。</div>
+    </div>
+  </div>
+
+  <div class="grid-2-1 anim-stagger" style="margin-top: 32px; flex: 1; min-height: 0;">
+    <div class="card">
+      <div class="kicker" style="color: var(--stone);">配置三層 · LIKE CLAUDE.md</div>
+      <ul class="list-clean" style="margin-top: 14px;">
+        <li><code class="inline">~/.claude/settings.json</code> — 全域(所有 project)</li>
+        <li><code class="inline">.claude/settings.json</code> — 團隊共享(會 commit)</li>
+        <li><code class="inline">.claude/settings.local.json</code> — 個人(不 commit)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="kicker" style="color: var(--stone);">6 種應用場景</div>
+      <ul class="list-clean" style="margin-top: 14px; font-size: 15px;">
+        <li>自動 format</li>
+        <li>自動跑測試</li>
+        <li>擋讀敏感檔</li>
+        <li>跑 linter</li>
+        <li>log Claude 動作</li>
+        <li>檢查命名規範</li>
+      </ul>
+    </div>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">Hook 跟 CLAUDE.md 規則差在哪?</div><div class="qa-a">CLAUDE.md 告訴模型該怎麼做 → 模型可能無視。Hook 程式碼物理擋下來 → 模型繞不過。</div></div>
+      <div class="qa-item"><div class="qa-q">三層 settings 同時存在誰贏?</div><div class="qa-a">local &gt; shared &gt; global(由近到遠覆蓋,跟 CLAUDE.md 一樣)。</div></div>
+      <div class="qa-item"><div class="qa-q">跟 permissions.deny 差在哪?</div><div class="qa-a">deny 是 declarative 名單;Hook 是 imperative 程式碼,可寫任意邏輯。</div></div>
+      <div class="qa-item"><div class="qa-q">寫 hook 用什麼語言?</div><div class="qa-a">任何 shell 能跑的東西,範例用 Node.js,Python/bash 都行。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>Hook = 物理攔截,不是禮貌請求</span>
+    <span><b>01</b> / 09</span>
+  </div>
+
+  <aside class="notes">Hook 講白了就是在 Claude 動手用工具之前或之後,插一段你寫的程式碼。之前的叫 PreToolUse — tool 還沒跑,你可以擋下來,回一個錯誤訊息給模型看。之後的叫 PostToolUse — tool 已經跑了你擋不了,但可以做後續動作,比如自動把剛改的檔 format 一下、自動跑測試、把結果丟回去給模型參考。配置上跟 CLAUDE.md 一樣有三層:全域、團隊共享、個人本機。第 5 站 init 示範會看到 settings.local.json 是怎麼產生的。Hook 能做的事很多,這頁列了六種,第 7 站 Useful hooks 會挑兩個真實案例細講。旁邊 Q&A 有些常見疑問先列在這,等等講完語法你應該都會自動懂。</aside>
+</section>
+
+<!-- Slide 2 — Defining hooks -->
+<section class="slide dark" data-screen-label="02 Defining hooks">
+  <div class="chrome top">
+    <span><b>Station 02</b><span class="dot"></span>Defining hooks</span>
+    <span>Syntax skeleton</span>
+  </div>
+  <div class="vmode-anchor">02 · Defining hooks</div>
+
+  <div class="anim-fade-up">
+    <div class="kicker">STATION 02 · SYNTAX</div>
+    <h1 class="h-xl" style="margin-top: 12px;">寫 hook 就 4 步</h1>
+    <p class="lead" style="margin-top: 14px; color: var(--warm-silver); max-width: 1100px;">
+      照著做就完成了。每一步對應 settings.json 裡一個欄位 — 沒有黑魔法。
+    </p>
+  </div>
+
+  <div class="row" style="margin-top: 28px; flex: 1; min-height: 0; gap: 32px;">
+    <div class="col grow" style="gap: 14px;">
+      <div class="step-grid anim-stagger">
+        <div class="step-cell">
+          <span class="num">STEP 1</span>
+          <span class="title">選 Pre 還是 Post</span>
+          <span class="sub">tool 之前還是之後</span>
+        </div>
+        <div class="step-cell">
+          <span class="num">STEP 2</span>
+          <span class="title">選監控哪個 tool</span>
+          <span class="sub">Read / Write / Bash · matcher 支援 regex</span>
+        </div>
+        <div class="step-cell">
+          <span class="num">STEP 3</span>
+          <span class="title">寫 command</span>
+          <span class="sub">stdin 收到 JSON · 任何 shell 能跑</span>
+        </div>
+        <div class="step-cell">
+          <span class="num">STEP 4</span>
+          <span class="title">exit code + stderr</span>
+          <span class="sub">回應給 Claude · stderr 變模型訊息</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 18px 22px;">
+        <div class="kicker">EXIT CODE 規則</div>
+        <ul class="list-clean" style="margin-top: 10px;">
+          <li><b style="color:var(--surface);">Exit 0</b> — 放行,tool 正常跑</li>
+          <li><b style="color:var(--surface);">Exit 2</b> — 擋下(<mark class="hl">只 PreToolUse 有效</mark>),stderr 內容變成 Claude 看到的訊息</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col grow" style="gap: 14px;">
+      <div>
+        <div class="kicker">STDIN JSON 範例 · MODEL 想 READ .ENV</div>
+        <pre class="code anim-fade-in" style="margin-top: 10px;"><span class="lang-tag">JSON</span><span class="tok-punct">{</span>
+  <span class="tok-prop">"session_id"</span><span class="tok-punct">:</span> <span class="tok-str">"2d6a1e4d-6..."</span><span class="tok-punct">,</span>
+  <span class="tok-prop">"transcript_path"</span><span class="tok-punct">:</span> <span class="tok-str">"/Users/sg/..."</span><span class="tok-punct">,</span>
+  <span class="tok-prop">"hook_event_name"</span><span class="tok-punct">:</span> <span class="tok-str">"PreToolUse"</span><span class="tok-punct">,</span>
+  <span class="tok-prop">"tool_name"</span><span class="tok-punct">:</span> <span class="tok-str">"Read"</span><span class="tok-punct">,</span>
+  <span class="tok-prop">"tool_input"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-prop">"file_path"</span><span class="tok-punct">:</span> <span class="tok-str">"/code/queries/.env"</span>  <span class="ann">← 判斷重點</span>
+  <span class="tok-punct">}</span>
+<span class="tok-punct">}</span></pre>
+      </div>
+
+      <div class="card" style="padding: 16px 22px;">
+        <div class="kicker">可監控的 TOOL</div>
+        <p class="body-sm" style="margin-top: 6px; color: var(--warm-silver); font-family: var(--font-mono); font-size: 14px;">
+          Read · Write · Edit · Bash · Grep · Glob · Task · WebFetch ...
+        </p>
+        <div class="callout-warn" style="margin-top: 12px;">
+          <span>⚠</span>
+          <span>MCP server 加進來會變列表 → 不確定就在 Claude Code 裡問「列出可用工具」</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">stdin JSON 的 schema 我怎麼知道?</div><div class="qa-a">第 8 站會教 jq trick — 先寫一個 log hook 把 stdin 印出來看,再寫真的 hook。</div></div>
+      <div class="qa-item"><div class="qa-q">command 一定要 Node.js 嗎?</div><div class="qa-a">不用。type: "command" 直接交給 shell,可以跑 python script.py、bash 任何能執行的東西。</div></div>
+      <div class="qa-item"><div class="qa-q">PostToolUse 為什麼擋不了?</div><div class="qa-a">tool 已經跑完了,沒得擋。Post 的能力是「加工」或「丟訊息回模型」。</div></div>
+      <div class="qa-item"><div class="qa-q">matcher 可以寫複雜 pattern?</div><div class="qa-a">支援 regex,例如 "Write|Edit" 一次盯多個 tool。</div></div>
+      <div class="qa-item"><div class="qa-q">同一 tool 多個 hook 誰先誰後?</div><div class="qa-a">settings.json 裡定義的順序就是執行順序。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>Pre / matcher / command / exit · 四件事而已</span>
+    <span><b>02</b> / 09</span>
+  </div>
+
+  <aside class="notes">上一站講 hook 是什麼,這站看 hook 怎麼寫。寫 hook 就 4 步,照著做就完成了。第一步,選 Pre 還是 Post — 你想在 tool 跑之前介入還是之後。第二步,選你要盯哪個 tool。Read、Write、Bash 這些。matcher 也可以寫 regex,比如 Write|Edit 一次盯兩個。第三步,寫一個 command。Claude Code 會把 tool call 的 JSON 從 stdin 餵給你 — 中間這個範例就是 stdin 長相。重點看 tool_input 那段,你想擋什麼就在那邊判斷,比如這個範例就是模型想 Read /code/queries/.env — 你的 command 解 JSON、看到 .env 就決定擋下來。第四步,用 exit code 回應。Exit 0 = 放行,Exit 2 = 擋下。Exit 2 的時候你 stderr 寫的訊息會被 Claude 看到。要注意 Exit 2 只有 PreToolUse 有效。可以盯哪些 tool 看右下角這個列表。但 — MCP server 加進來會多新 tool,最簡單的辦法是直接在 Claude Code 裡問「列出可用工具」。下一站 Implementing a hook 我們把這 4 步串起來,寫一個真的能跑的 hook,就是擋讀 .env 那個範例。</aside>
+</section>
+
+<!-- Slide 3 — Implementing a hook -->
+<section class="slide" data-screen-label="03 Implementing a hook">
+  <div class="chrome top">
+    <span><b>Station 03</b><span class="dot"></span>Implementing a hook</span>
+    <span>First example</span>
+  </div>
+  <div class="vmode-anchor">03 · Implementing a hook</div>
+
+  <div class="anim-fade-up">
+    <div class="kicker">STATION 03 · CODE</div>
+    <h1 class="h-xl" style="margin-top: 12px;">任務 — 擋住 Claude 讀 <code class="inline" style="font-size: 0.7em; padding: 6px 14px;">.env</code></h1>
+    <p class="lead" style="margin-top: 14px;">
+      Hook 不是一支 script,是<mark class="hl">兩個檔案</mark> — 一個註冊表 + 一支邏輯 script。
+    </p>
+  </div>
+
+  <div class="grid-2 anim-stagger" style="margin-top: 18px; gap: 22px;">
+    <div class="col" style="gap: 8px;">
+      <div class="kicker" style="color: var(--stone);">FILE 1 · .CLAUDE/SETTINGS.LOCAL.JSON</div>
+      <pre class="code light" style="font-size: 13px;"><span class="lang-tag">JSON</span><span class="tok-punct">{</span>
+  <span class="tok-prop">"hooks"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-prop">"PreToolUse"</span><span class="tok-punct">:</span> <span class="tok-punct">[</span>
+      <span class="tok-punct">{</span>
+        <span class="tok-prop">"matcher"</span><span class="tok-punct">:</span> <span class="tok-str">"Read"</span><span class="tok-punct">,</span>
+        <span class="tok-prop">"hooks"</span><span class="tok-punct">:</span> <span class="tok-punct">[</span>
+          <span class="tok-punct">{</span>
+            <span class="tok-prop">"type"</span><span class="tok-punct">:</span> <span class="tok-str">"command"</span><span class="tok-punct">,</span>
+            <span class="tok-prop">"command"</span><span class="tok-punct">:</span> <span class="tok-str">"node $PWD/hooks/read_hook.js"</span>
+          <span class="tok-punct">}</span>
+        <span class="tok-punct">]</span>
+      <span class="tok-punct">}</span>
+    <span class="tok-punct">]</span>
+  <span class="tok-punct">}</span>
+<span class="tok-punct">}</span></pre>
+      <p class="body-sm" style="font-size: 13px;">↑ <code class="inline">$PWD</code> 下一站講</p>
+    </div>
+
+    <div class="col" style="gap: 8px;">
+      <div class="kicker" style="color: var(--stone);">FILE 2 · HOOKS/READ_HOOK.JS</div>
+      <pre class="code light" style="font-size: 13px;"><span class="lang-tag">JAVASCRIPT</span>process.stdin.<span class="tok-fn">setEncoding</span>(<span class="tok-str">"utf8"</span>);
+<span class="tok-kw">let</span> input = <span class="tok-str">""</span>;
+process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"data"</span>, (d) =&gt; (input += d));
+process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>, () =&gt; <span class="tok-punct">{</span>
+  <span class="tok-kw">const</span> toolArgs = JSON.<span class="tok-fn">parse</span>(input);
+  <span class="tok-kw">const</span> readPath =
+    toolArgs.tool_input?.file_path || <span class="tok-str">""</span>;
+  <span class="tok-kw">if</span> (readPath.<span class="tok-fn">includes</span>(<span class="tok-str">".env"</span>)) <span class="tok-punct">{</span>
+    console.<span class="tok-fn">error</span>(<span class="tok-str">"You cannot read .env"</span>);
+    process.<span class="tok-fn">exit</span>(<span class="tok-num">2</span>);   <span class="ann">// ← 擋下</span>
+  <span class="tok-punct">}</span>
+  process.<span class="tok-fn">exit</span>(<span class="tok-num">0</span>);   <span class="ann">// ← 放行</span>
+<span class="tok-punct">}</span>);</pre>
+    </div>
+  </div>
+
+  <div class="card-elevated anim-delayed" style="margin-top: 14px; padding: 14px 22px;">
+    <div class="kicker">SCHEMA 對照 · 為什麼只擋 READ,不擋 BASH / GREP?</div>
+    <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font: 400 13px/1.5 var(--font-mono); color: var(--charcoal);">
+      <div><b style="color:var(--terracotta);">Read.tool_input</b> → <code>{ "file_path": "..." }</code></div>
+      <div><b style="color:var(--terracotta);">Bash.tool_input</b> → <code>{ "command": "..." }</code> <span class="meta">← schema 不同</span></div>
+      <div><b style="color:var(--terracotta);">Grep.tool_input</b> → <code>{ "pattern": "...", "path": "..." }</code></div>
+    </div>
+    <p class="body-sm" style="margin-top: 8px; font-size: 13px;">
+      → 要全面擋:每個 tool 寫一個 matcher,或用 <code class="inline">permissions.deny: ["Read(**/.env)"]</code> 跨 tool 統一
+    </p>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">$PWD 怎麼變絕對路徑?</div><div class="qa-a">下一站 Gotchas 講,那是 init script 的功勞。</div></div>
+      <div class="qa-item"><div class="qa-q">要連 Bash cat .env 也擋?</div><div class="qa-a">兩條路 — ① 多寫 matcher: "Bash" parse command 字串 ② permissions.deny "Read(**/.env)" 一次擋全部。</div></div>
+      <div class="qa-item"><div class="qa-q">optional chaining ?. 必要嗎?</div><div class="qa-a">不是,但建議。tool_input 不同 tool 結構不同,加上比較不會爆。</div></div>
+      <div class="qa-item"><div class="qa-q">為什麼用 includes 不用嚴格 path?</div><div class="qa-a">簡單 demo。production 改 path.basename 或 minimatch 比較精準。</div></div>
+      <div class="qa-item"><div class="qa-q">被 hook 擋下,模型反應?</div><div class="qa-a">看到 stderr 訊息,知道為什麼被擋,會 replan 跳過或改用其他工具。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>5 行 JS · 1 個 matcher · hook 完成</span>
+    <span><b>03</b> / 09</span>
+  </div>
+
+  <aside class="notes">前面看了概念跟語法,這站開始寫真的程式碼。任務:擋住 Claude 讀 .env。注意,hook 不是一支 script,是兩個檔案 — 一個註冊表加一支邏輯 script。第一個檔,.claude/settings.local.json,是 hook 的註冊表。它告訴 Claude Code「監控 Read tool,每次模型要 Read 的時候,跑 read_hook.js 這支」。matcher 寫 Read,type 是 command,command 那一行 node $PWD/hooks/read_hook.js,那個 $PWD 等等下一站 Gotchas 講為什麼這樣寫。第二個檔,hooks/read_hook.js,邏輯就五行 — 從 stdin 讀 JSON,parse,看 tool_input.file_path 有沒有 .env,有就 stderr 寫訊息加 exit 2 擋下來,沒有就 exit 0 放行。這支 hook 只擋 Read 一個 tool。如果 Claude 改用 Bash 跑 cat .env 就過了。為什麼?因為每個 tool 的 tool_input schema 不同 — 看下面這三行:Read 是 file_path、Bash 是 command、Grep 是 pattern + path。要全面擋有兩條路 — 寫多個 matcher 各自處理,或用 permissions.deny 一次擋住跨 tool。Production 環境通常兩個都用:hook 寫客製邏輯,permissions.deny 守底線。這支 hook 第 6 站會直接跑給你看,現在先把 code 結構記在腦袋裡。</aside>
+</section>
+
+<!-- Slide 4 — Gotchas -->
+<section class="slide" data-screen-label="04 Gotchas">
+  <div class="chrome top">
+    <span><b>Station 04</b><span class="dot"></span>Gotchas around hooks</span>
+    <span>Deployment detail</span>
+  </div>
+  <div class="vmode-anchor">04 · Gotchas around hooks</div>
+
+  <div class="anim-fade-up">
+    <div class="kicker">STATION 04 · GOTCHA</div>
+    <h1 class="h-xl" style="margin-top: 12px;">為什麼會看到<mark class="hl">兩個</mark> settings.json?</h1>
+    <p class="lead" style="margin-top: 14px;">
+      官方安全建議跟「team 共享」之間有矛盾。解法是 placeholder + setup script。
+    </p>
+  </div>
+
+  <div class="opp anim-stagger" style="margin-top: 28px;">
+    <div class="opp-panel">
+      <div class="label">SAFETY 建議</div>
+      <div class="title">hook command 要用<br>絕對路徑</div>
+      <ul>
+        <li>防 path interception</li>
+        <li>防 binary planting</li>
+      </ul>
+    </div>
+    <div class="opp-arrow">⚡<br><span class="meta">矛盾</span></div>
+    <div class="opp-panel right" style="border-right-color: var(--crimson);">
+      <div class="label" style="color: var(--crimson);">卻造成</div>
+      <div class="title">settings.json<br>沒法跨機器共享</div>
+      <ul>
+        <li>/Users/<b style="color:var(--terracotta);">eric</b>/.../x.js</li>
+        <li>≠ /Users/<b style="color:var(--terracotta);">wei</b>/.../x.js</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <div class="kicker">解法 · 三步走</div>
+    <div class="flow3 anim-stagger">
+      <div class="cell">
+        <div class="label">FILE A · COMMITTED</div>
+        <div class="name">settings.example.json</div>
+        <div style="font: 400 12px/1.5 var(--font-mono); background: var(--deep-dark); color: var(--surface); padding: 10px 12px; border-radius: 4px;">
+          <span class="tok-prop">"command"</span>:<br>
+          &nbsp;&nbsp;<span class="tok-str">"node </span><mark class="hl"><span class="tok-str">$PWD</span></mark><span class="tok-str">/hooks/x.js"</span>
+        </div>
+        <div class="meta">✓ commit 進 repo</div>
+      </div>
+      <div class="arr">→</div>
+      <div class="cell">
+        <div class="label">轉換 · CLONE 後跑</div>
+        <div class="name">npm run setup</div>
+        <div style="font: 400 12px/1.6 var(--font-mono); color: var(--charcoal);">
+          scripts/init-claude.js<br>
+          字串 replace <code class="inline" style="font-size: 11px;">$PWD</code><br>
+          → <code class="inline" style="font-size: 11px;">process.cwd()</code>
+        </div>
+        <div class="meta" style="color: var(--terracotta);">✦ 不展開 shell var</div>
+      </div>
+      <div class="arr">→</div>
+      <div class="cell">
+        <div class="label">FILE B · GITIGNORED</div>
+        <div class="name">settings.local.json</div>
+        <div style="font: 400 12px/1.5 var(--font-mono); background: var(--deep-dark); color: var(--surface); padding: 10px 12px; border-radius: 4px;">
+          <span class="tok-prop">"command"</span>:<br>
+          &nbsp;&nbsp;<span class="tok-str">"node </span><mark class="hl"><span class="tok-str">/Users/eric/...</span></mark><span class="tok-str">"</span>
+        </div>
+        <div class="meta">✗ .gitignore(本機專屬)</div>
+      </div>
+    </div>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">相對路徑為什麼不安全?</div><div class="qa-a">path interception — 攻擊者放同名 script 在 PATH 較前位置;binary planting — 把惡意 script 放進 cwd 讓你誤執行。</div></div>
+      <div class="qa-item"><div class="qa-q">直接寫死絕對路徑不用 $PWD?</div><div class="qa-a">可以,但 settings.json 就只能你自己用,team 沒法 commit 共享。</div></div>
+      <div class="qa-item"><div class="qa-q">settings.local.json 為何 .gitignore?</div><div class="qa-a">含的是你機器的絕對路徑,commit 上去隊友 clone 下來會壞。example 才 commit。</div></div>
+      <div class="qa-item"><div class="qa-q">$PWD 是 shell 變數,init script 怎處理?</div><div class="qa-a">字串 replace — 把 "$PWD" 字串直接換成 process.cwd() 的結果,不是真的展開 shell 變數。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>example commit · local gitignore · setup 串起來</span>
+    <span><b>04</b> / 09</span>
+  </div>
+
+  <aside class="notes">上一站看了 hook 的 code,但跑起來之前有個小坑要先處理。等等第 5 站 init 示範你會看到 .claude 目錄底下有兩個 settings.json,這站先解釋為什麼。起點是 Claude Code 官方的安全建議:hook command 要用絕對路徑,不要用相對路徑。為什麼?兩個攻擊向量 — path interception 跟 binary planting。簡單講就是攻擊者可以放假腳本騙你執行,相對路徑就被解析到攻擊者的 script。絕對路徑能避開這風險。但絕對路徑帶來新問題 — 我機器的 hook 路徑跟你機器的不一樣,settings.json 沒法直接 commit 給 team 用。每個人 clone 下來路徑都不同。解法是 placeholder + setup script。寫一份 settings.example.json,command 那邊用 $PWD 當 placeholder,這個版本可以 commit 進 repo。然後寫一支 setup script,每個人 clone 後跑 npm run setup,裡面的 scripts/init-claude.js 會把 $PWD 字串換成本機 process.cwd() 的結果,產生 settings.local.json。這個帶你機器絕對路徑的版本 .gitignore 不 commit。注意 — 那個 $PWD 不是真的 shell 變數展開,是 init script 用字串 replace 換掉的。下一站 init 示範我會跑 npm run setup 給你看,settings.local.json 從 example 變出來的過程。</aside>
+</section>
+
+<!-- Slide 5 — init demo (LIVE) -->
+<section class="slide dark live-bg" data-screen-label="05 init 示範">
+  <div class="chrome top">
+    <span><b>Station 05</b><span class="dot"></span>init 示範</span>
+    <span>Live demo · 5 min</span>
+  </div>
+  <div class="vmode-anchor">05 · init 示範 · LIVE</div>
+
+  <div class="anim-fade-up" style="display: flex; align-items: baseline; gap: 24px;">
+    <div class="live-banner">⚡ LIVE DEMO</div>
+    <div class="meta" style="color: var(--warm-silver);">Slide 4 解法 → 真的跑一次</div>
+  </div>
+
+  <h1 class="h-hero anim-fade-up" style="margin-top: 24px;">init 示範</h1>
+  <p class="lead anim-fade-up" style="color: var(--warm-silver); margin-top: 12px; max-width: 1200px;">
+    settings.local.json 從哪冒出來?跑一次 <code class="inline">npm run setup</code> 你就懂了。
+  </p>
+
+  <div class="grid-2-1 anim-stagger" style="margin-top: 32px; flex: 1; min-height: 0; gap: 36px;">
+    <div class="col">
+      <div>
+        <div class="kicker">即將執行</div>
+        <pre class="code anim-fade-in" style="margin-top: 10px;"><span class="lang-tag">SHELL</span><span class="tok-com">$</span> <span class="tok-fn">cd</span> ~/project/hooks-demo/queries
+<span class="tok-com">$</span> <span class="tok-fn">npm</span> run setup</pre>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <div class="kicker">請看 3 件事</div>
+        <div class="watch-list">
+          <div class="watch-item">
+            <span class="watch-num">①</span>
+            <span class="watch-text">跑之前 <b>.claude/</b> 只有 <b>settings.example.json</b></span>
+          </div>
+          <div class="watch-item">
+            <span class="watch-num">②</span>
+            <span class="watch-text"><b>npm run setup</b> 觸發 <b>scripts/init-claude.js</b></span>
+          </div>
+          <div class="watch-item">
+            <span class="watch-num">③</span>
+            <span class="watch-text">跑完 <b>.claude/settings.local.json</b> 出現,<code class="inline">$PWD</code> 已被換成絕對路徑</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="align-self: stretch; padding: 22px;">
+      <div class="kicker">埋伏筆 · 順便看到</div>
+      <p class="body-sm" style="color: var(--warm-silver); margin-top: 8px;">
+        hooks/ 目錄底下有 3 支 hook 已備好:
+      </p>
+      <ul class="list-clean" style="margin-top: 12px;">
+        <li><code style="font-family:var(--font-mono);font-size:14px;color:var(--coral);">read_hook.js</code> <span class="meta">← 第 6 站會跑</span></li>
+        <li><code style="font-family:var(--font-mono);font-size:14px;color:var(--coral);">tsc.js</code> <span class="meta">← 第 7 站會講</span></li>
+        <li><code style="font-family:var(--font-mono);font-size:14px;color:var(--coral);">query_hook.js</code> <span class="meta">← 第 7 站會講 + 跑</span></li>
+      </ul>
+
+      <div class="divider"></div>
+      <p class="body-sm" style="color: var(--warm-silver); font-size: 13px;">
+        這站的視覺極簡是刻意的 — 真正的舞台在 <b style="color:var(--surface);">terminal</b>。
+      </p>
+    </div>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">$PWD 被換成什麼?</div><div class="qa-a">process.cwd() 的結果,這台機器是 /Users/ericcai/project/hooks-demo/queries。</div></div>
+      <div class="qa-item"><div class="qa-q">改了 path 想重跑怎麼辦?</div><div class="qa-a">再跑一次 npm run setup 會覆蓋 settings.local.json。</div></div>
+      <div class="qa-item"><div class="qa-q">example 跟 local 同時定義 hook?</div><div class="qa-a">local 生效,example 是 template;衝突時 local 贏。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>視線在 terminal · 不在 slide</span>
+    <span><b>05</b> / 09</span>
+  </div>
+
+  <aside class="notes">前面四站把概念跟 code 結構講完,這站直接跑給你看。我已經 cd 到 ~/project/hooks-demo/queries,這是 hook 示範 repo。第一個動作 — ls .claude/ 看一下。只有 settings.example.json,沒有 settings.local.json。cat .claude/settings.example.json — 看 command 那行的 $PWD/hooks/read_hook.js,跟上一站講的一樣。現在跑 — npm run setup。看終端輸出,npm 會先 install 一堆 dep,這段不重要,等它跑完。OK 跑完了。再看 ls .claude/ — settings.local.json 出現了。cat .claude/settings.local.json | grep command — 看,$PWD 被換成絕對路徑,我這台是 /Users/ericcai/project/hooks-demo/queries/hooks/...。如果是你的機器跑會是 /Users/wei/... 或別的。順便打開 setup script 看一眼 — cat scripts/init-claude.js。就一段 string replace,把檔案內容裡的 $PWD 字串換成 process.cwd() 結果。沒什麼魔法。還有一個順手要看的 — ls hooks/。看,這個 repo 已經備了 3 支 hook:read_hook.js、tsc.js、query_hook.js。第 6 站我們跑 read_hook,第 7 站講 tsc 跟 query_hook 兩個進階案例 — query_hook 會 live 跑。接下來 settings.local.json 已經 ready,第 6 站 read_hook 示範我們就直接讓 Claude 嘗試讀 .env 看會發生什麼。</aside>
+</section>
+
+<!-- Slide 6 — read_hook demo (LIVE) -->
+<section class="slide dark live-bg" data-screen-label="06 read_hook 示範">
+  <div class="chrome top">
+    <span><b>Station 06</b><span class="dot"></span>read_hook 示範</span>
+    <span>Live demo · 5 min</span>
+  </div>
+  <div class="vmode-anchor">06 · read_hook 示範 · LIVE</div>
+
+  <div class="anim-fade-up" style="display: flex; align-items: baseline; gap: 24px;">
+    <div class="live-banner">⚡ LIVE DEMO</div>
+    <div class="meta" style="color: var(--warm-silver);">Slide 3 那 5 行 JS · 真的攔截一次</div>
+  </div>
+
+  <h1 class="h-hero anim-fade-up" style="margin-top: 24px;">read_hook 示範</h1>
+  <p class="lead anim-fade-up" style="color: var(--warm-silver); margin-top: 12px; max-width: 1200px;">
+    讓 Claude 嘗試讀 <code class="inline">.env</code> — 看 hook 物理擋下、模型 replan。
+  </p>
+
+  <div class="grid-2-1 anim-stagger" style="margin-top: 32px; flex: 1; min-height: 0; gap: 36px;">
+    <div class="col">
+      <div>
+        <div class="kicker">即將執行</div>
+        <pre class="code anim-fade-in" style="margin-top: 10px;"><span class="lang-tag">SHELL</span><span class="tok-com"># 在 ~/project/hooks-demo/queries 開 Claude Code</span>
+<span class="tok-com">prompt:</span> <span class="tok-str">「幫我讀 .env 看一下設定」</span></pre>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <div class="kicker">請看 3 件事</div>
+        <div class="watch-list">
+          <div class="watch-item">
+            <span class="watch-num">①</span>
+            <span class="watch-text">模型決定要 <b>Read .env</b> → terminal 顯示 <b>PreToolUse hook 觸發</b></span>
+          </div>
+          <div class="watch-item">
+            <span class="watch-num">②</span>
+            <span class="watch-text">Hook stderr 訊息出現:<b>「You cannot read .env」</b></span>
+          </div>
+          <div class="watch-item">
+            <span class="watch-num">③</span>
+            <span class="watch-text">模型「看到」這個訊息後 <b>replan</b> → 改用其他方式繼續任務</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 22px;">
+      <div class="kicker">回扣前面學的</div>
+      <ul class="list-clean" style="margin-top: 12px;">
+        <li><b style="color:var(--surface);">Slide 2</b> stdin JSON → 真的長那樣</li>
+        <li><b style="color:var(--surface);">Slide 3</b> read_hook.js → 跑起來的就是這支</li>
+        <li><b style="color:var(--surface);">Slide 3</b>「Read schema」→ 這次有觸發、Bash 不會</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <p class="body-sm" style="color: var(--warm-silver); font-size: 14px;">
+        Hook 不是 panic 機制 — 它就是「插個門」讓你<b style="color:var(--surface);">控制能不能過</b>。
+      </p>
+    </div>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">"You cannot read .env" 模型懂嗎?</div><div class="qa-a">懂。模型把 stderr 當 system feedback,通常會 replan 跳過或改用別的工具。</div></div>
+      <div class="qa-item"><div class="qa-q">改成 "用 cat 看 .env" 呢?</div><div class="qa-a">模型會用 Bash,這支 hook 沒擋 Bash → 過了。這正是 Slide 3 講的 schema 不同問題。</div></div>
+      <div class="qa-item"><div class="qa-q">Hook 失敗(crash)怎麼辦?</div><div class="qa-a">Claude Code 會顯示 hook 異常,多數情況仍放行 tool(避免你被自己的 bug 鎖在外面)。</div></div>
+      <div class="qa-item"><div class="qa-q">stderr 會被算進 context 嗎?</div><div class="qa-a">會。所以訊息要短而精準 — 不然一個 hook 攔截就吃掉幾百 token。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>看模型撞到 hook · 看它 replan</span>
+    <span><b>06</b> / 09</span>
+  </div>
+
+  <aside class="notes">上一站 init 跑完,settings.local.json 已經 ready。這站直接跑 read_hook 攔截 demo。我在 ~/project/hooks-demo/queries 開 Claude Code session。Prompt:「幫我讀 .env 看一下設定」。送出,等模型反應。看,模型決定要用 Read tool 讀 .env。Claude Code 在執行前先觸發 PreToolUse hook — 看終端訊息:You cannot read .env。這就是 Slide 3 那段 console.error() 寫的訊息,stderr 直接出現在這。等模型 replan。模型看到 stderr,知道被擋了,現在它會 replan — 可能改用 Bash,可能改成讀 README,看它判斷。這次它的選擇是現場看。重點是模型沒爆掉、沒卡住,它就是被擋了然後想下一步。Hook 不是 panic 機制,是「插個門」讓你控制能不能過。回扣前面三件事 — 第一,Slide 2 我給的 stdin JSON 範例,這個 demo 觸發時,stdin 收到的真的就是這個結構,只是 file_path 換成 .env 實際路徑。第二,Slide 3 那個五行 read_hook.js 邏輯,跑起來就是現在這個攔截。第三,Slide 3 提的「Read schema vs Bash schema」— 這次 hook 觸發是因為模型用 Read。如果有人去問模型「用 cat 看 .env」,hook 不會觸發,因為 Bash 的 tool_input 是 command 不是 file_path。要全面擋還是得 permissions.deny。接下來最後兩站,看真實 production 工作會用什麼樣的 hook。</aside>
+</section>
+
+<!-- Slide 7 — Useful hooks (含 query_hook live) -->
+<section class="slide" data-screen-label="07 Useful hooks">
+  <div class="chrome top">
+    <span><b>Station 07</b><span class="dot"></span>Useful hooks</span>
+    <span>Production cases · live</span>
+  </div>
+  <div class="vmode-anchor">07 · Useful hooks</div>
+
+  <div class="anim-fade-up">
+    <div class="kicker">STATION 07 · PRODUCTION</div>
+    <h1 class="h-xl" style="margin-top: 12px;">兩個真實案例 · 一 Pre 一 Post</h1>
+    <p class="lead" style="margin-top: 12px; max-width: 1300px;">
+      刻意挑成對 — 看「<mark class="hl">能力決定時機</mark>」這個原則。Pre 預防 / Post 善後。
+    </p>
+  </div>
+
+  <div class="grid-2 anim-stagger" style="margin-top: 14px;">
+    <div class="card-elevated" style="padding: 16px 20px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="tag post">PostToolUse</span>
+        <span class="meta">Hook 1 · TypeScript Type Checking</span>
+      </div>
+      <div class="h-md" style="margin-top: 6px; font-size: 28px;">寫了 → 校對 → 餵 feedback</div>
+
+      <div style="margin-top: 12px;">
+        <div class="kicker" style="color: var(--stone); font-size: 11px;">問題</div>
+        <p class="body" style="font-size: 14px; margin-top: 4px;">
+          Claude 改 function signature,漏改 call site。schema.ts 加 verbose 參數 → main.ts 沒同步 → type error 你不會發現。
+        </p>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="kicker" style="color: var(--stone); font-size: 11px;">時機 · WHY POST?</div>
+        <p class="body" style="font-size: 14px; margin-top: 4px;">
+          type check 需要<b>完整檔案在 disk</b> 才能編譯。Pre 看不到「寫進去後的狀態」。
+        </p>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="kicker" style="color: var(--stone); font-size: 11px;">HOOK 做什麼</div>
+        <ul class="list-clean" style="margin-top: 4px;">
+          <li style="font-size: 13px;">matcher: <code class="inline" style="font-size: 12px;">Write|Edit|MultiEdit</code></li>
+          <li style="font-size: 13px;">in-process 用 typescript package(<b>不</b> spawn tsc CLI · +10-50 ms)</li>
+          <li style="font-size: 13px;">type error → stderr + exit 2 → Claude 看到 feedback → 下個 action 修</li>
+        </ul>
+      </div>
+
+      <div class="meta" style="margin-top: 10px; color: var(--terracotta);">
+        程式碼 · <code>hooks/tsc.js</code>
+      </div>
+    </div>
+
+    <div class="card-elevated" style="padding: 16px 20px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="tag pre">PreToolUse</span>
+        <span class="meta">Hook 2 · Query Duplication Prevention</span>
+        <span class="tag live" style="margin-left: auto;">⚡ LIVE</span>
+      </div>
+      <div class="h-md" style="margin-top: 6px; font-size: 28px;">想寫 → 預檢 → 擋下 → 改用既有</div>
+
+      <div style="margin-top: 12px;">
+        <div class="kicker" style="color: var(--stone); font-size: 11px;">情境</div>
+        <p class="body" style="font-size: 14px; margin-top: 4px;">
+          task.md「Slack alert,order pending &gt; 3 天通知」。Claude 寫新 query 而不重用既有 <code class="inline" style="font-size: 12px;">getPendingOrders()</code> → 重複、技術債。
+        </p>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="kicker" style="color: var(--stone); font-size: 11px;">時機 · WHY PRE?</div>
+        <p class="body" style="font-size: 14px; margin-top: 4px;">
+          要在<b>寫進 disk 之前</b>就擋 — 不然就是「先污染再清理」,還要做第二個 edit。
+        </p>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="kicker" style="color: var(--stone); font-size: 11px;">HOOK 做什麼 · 觀念躍遷</div>
+        <ol style="list-style: decimal inside; margin-top: 4px; font: 400 13px/1.55 var(--font-body); color: var(--fg-warm);">
+          <li>檢查 path 是否在 src/queries/,不是 → exit 0</li>
+          <li>是 → 用 Agent SDK 啟動 <b style="color:var(--terracotta);">sub-Claude</b>,讀整個 src/queries/</li>
+          <li>sub-Claude 比對「新 content vs 既有 functions」</li>
+          <li>"Changes look appropriate" → exit 0;有重複 → exit 2 ⛔ + stderr 寫分析</li>
+        </ol>
+      </div>
+
+      <div class="meta" style="margin-top: 10px; color: var(--terracotta);">
+        程式碼 · <code>hooks/query_hook.js</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3 anim-stagger" style="margin-top: 12px;">
+    <div class="card" style="padding: 14px 16px;">
+      <div class="kicker" style="color: var(--stone); font-size: 11px;">中繼 · AGENT SDK 最小範例</div>
+      <div class="h-xs" style="margin-top: 4px; font-size: 18px;">sdk.ts</div>
+      <pre class="code light" style="margin-top: 6px; font-size: 11px; padding: 10px; line-height: 1.55;"><span class="tok-kw">import</span> <span class="tok-punct">{</span> query <span class="tok-punct">}</span> <span class="tok-kw">from</span>
+  <span class="tok-str">"@anthropic-ai/claude-agent-sdk"</span>;
+
+<span class="tok-kw">const</span> prompt = <span class="tok-str">""</span>;
+
+<span class="tok-kw">for await</span> (<span class="tok-kw">const</span> message
+  <span class="tok-kw">of</span> query(<span class="tok-punct">{</span> prompt <span class="tok-punct">}</span>)) <span class="tok-punct">{</span>
+  console.<span class="tok-fn">log</span>(message);
+<span class="tok-punct">}</span></pre>
+      <p class="body-sm" style="font-size: 11px; margin-top: 6px;">
+        → query_hook.js = <mark class="hl">把 sdk.ts 包進 hook</mark>
+      </p>
+    </div>
+
+    <div class="card" style="padding: 14px 16px; background: rgba(201,100,66,0.05); border-color: rgba(201,100,66,0.25);">
+      <div class="kicker">⚡ LIVE · QUERY_HOOK</div>
+      <div class="h-xs" style="margin-top: 4px; font-size: 18px;">即將跑</div>
+      <ol style="list-style: decimal inside; margin-top: 8px; font: 400 12px/1.5 var(--font-body); color: var(--fg-warm);">
+        <li>砍 query_hook.js line 9 的 <code class="inline" style="font-size: 11px;">process.exit(0)</code> enable</li>
+        <li>強制 prompt:<i>「在 src/queries/order_queries.ts 新增 getOrdersPendingMoreThanThreeDays(db)。不要先看其他 functions,直接寫」</i></li>
+        <li>看 sub-Claude review → stderr 印分析 → 原 Claude 改用 getPendingOrders()</li>
+      </ol>
+    </div>
+
+    <div class="card" style="padding: 14px 16px;">
+      <div class="kicker" style="color: var(--stone); font-size: 11px;">REPO 順手還有兩個</div>
+      <ul class="list-clean" style="margin-top: 8px;">
+        <li style="font-size: 12px;"><b>Prettier auto-format</b> — Post · 一行 shell pipeline:<br>
+          <code class="inline" style="font-size: 10px;">jq -r '...' | xargs prettier --write</code><br>
+          → hook 不一定要 .js,shell 也行
+        </li>
+        <li style="font-size: 12px;"><b>jq logger</b> — matcher: <code class="inline" style="font-size: 10px;">*</code>,把 stdin 寫到 pre-log.json / post-log.json → 第 8 站講</li>
+      </ul>
+    </div>
+  </div>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">為什麼 query_hook 用 Pre、tsc 用 Post?</div><div class="qa-a">能力決定 — query duplication 要「寫之前擋住」;tsc 需要完整檔案在 disk 才能編譯,必須 Post。</div></div>
+      <div class="qa-item"><div class="qa-q">PreToolUse 等 sub-Claude 不會卡住?</div><div class="qa-a">會。settings 配 timeout: 300s,demo 也因此可能等 10-30 秒。</div></div>
+      <div class="qa-item"><div class="qa-q">Sub-Claude 自己會讀 queries 目錄?</div><div class="qa-a">對。Agent SDK 啟動的 Claude 有完整 tool 能力(Read、Glob、Grep),自己探索做語意比對。</div></div>
+      <div class="qa-item"><div class="qa-q">兩個 Claude 互觸發 hook 會無限遞迴?</div><div class="qa-a">Agent SDK 啟動的 sub-Claude 是獨立 session,不繼承原 session 的 hook config。</div></div>
+      <div class="qa-item"><div class="qa-q">沒裝 Agent SDK 也能寫類似 hook?</div><div class="qa-a">可以。Agent SDK 是 official 接口,自己 call API 或用其他模型做 review,pattern 一樣。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>能力決定時機 · Pre 預防 / Post 善後</span>
+    <span><b>07</b> / 09</span>
+  </div>
+
+  <aside class="notes">前面看了概念、語法、demo,這站看真實 production 工作會用什麼 hook。兩個案例刻意挑一個 Pre 一個 Post,看「能力決定時機」這個原則。案例一 — TypeScript Type Checking(Post)。場景熟悉嗎?Claude 改 function signature,譬如 schema.ts 加 verbose 參數,但漏改 main.ts 那邊 call site。Wei 跟 HungYu 在 Part 1 都講過。為什麼用 Post 不用 Pre?因為 type check 需要完整檔案在 disk 才能編譯,Pre 看不到「寫進去後的狀態」,非 Post 不可。解法:PostToolUse 監控 Write|Edit|MultiEdit,每次 Claude 改 .ts 完,hook 用 typescript package in-process 跑 type check — 不 spawn tsc CLI,那個 cold start 慢;in-process 重用 Node runtime,每次只多 10-50 ms。找到 type error → stderr 寫錯誤 + exit 2 → Claude 收到當 feedback → 下一個 action 自己去修其他 call site。程式碼在 hooks/tsc.js。案例二 — Query Duplication Prevention(Pre)。情境就是這 repo task.md 寫的:「做 Slack alert,pending order 超過 3 天通知」。如果不管,Claude 會直接寫新的 query function。但 repo 已經有 getPendingOrders() 之類的,應該重用。為什麼用 Pre 不用 Post?因為要在寫進 disk 之前就擋掉。觀念躍遷在這 — hook 程式裡用 Anthropic Agent SDK 又啟動一個 Claude。先看一下 sdk.ts 這個最小範例 — 就是 import query、丟個 prompt、收訊息。然後 query_hook.js 就是「把 sdk.ts 包進 hook」 — 中間 for-await loop 跟 sdk.ts 一模一樣,外面包 stdin 讀取、prompt 組裝、exit code 三個殼。流程:模型想 Write/Edit/MultiEdit,PreToolUse 觸發。Hook 先檢查目標 path 是不是在 src/queries/ — 不是就 exit 0 放行。是的話,spawn sub-Claude,給它 prompt「比對新 content 跟既有 queries 看有沒有重複」。sub-Claude 自己有 Read、Glob 工具,自己探索 src/queries/ 目錄做語意比對。比 grep 強很多 — getPendingOrders() 跟 findOldOrders() 名字不一樣但功能重複,grep 抓不到,AI review 看得出。Sub-Claude 回 "Changes look appropriate" 就 exit 0 放行;回 duplication 分析就 stderr 寫分析 + exit 2 擋下。原 Claude 收到 feedback,直接改用既有 function,根本不寫新的。這呼應 Part 1 HungYu 講的「codex 跟 cc 互相 review」 — 多 Claude 互檢就是 hook 在做的事。現在我們直接 live 跑這個。先砍 query_hook.js line 9 的 process.exit(0) 把它 enable,然後用一個強制觸發 prompt。送出,等。注意 timeout 配 300 秒,所以可能等 10-30 秒,現場耐心一點。看 — sub-Claude 回 duplication detected,hook stderr 印分析,原 Claude 收到 feedback,改用 getPendingOrders()。這 repo 順手還有兩個小 hook 你也會看到。Prettier 自動格式化 — PostToolUse, Write|Edit|MultiEdit。注意這個沒寫 .js script,直接是一行 shell pipeline。教給你「hook 不一定要 Node.js,shell 一行也行」。jq logger — matcher 是 *(什麼 tool 都觸發),把 stdin JSON 寫到 pre-log.json 或 post-log.json。這是第 8 站要講的 helper trick。共同設計原則:Hook 不是終結者,是校對員。Pre 預防、Post 善後 — 能力決定時機。</aside>
+</section>
+
+<!-- Slide 8 — Another useful hook -->
+<section class="slide dark" data-screen-label="08 Another useful hook">
+  <div class="chrome top">
+    <span><b>Station 08</b><span class="dot"></span>Another useful hook</span>
+    <span>Other events + meta-hook</span>
+  </div>
+  <div class="vmode-anchor">08 · Another useful hook</div>
+
+  <div class="anim-fade-up">
+    <div class="kicker">STATION 08 · META</div>
+    <h1 class="h-xl" style="margin-top: 12px;">9 種 hook event</h1>
+    <p class="lead" style="margin-top: 12px; color: var(--warm-silver); max-width: 1300px;">
+      Pre/Post 不是全部。其他 7 種 event 各有用途,但 stdin 結構也不同 — <mark class="hl">先 log 後寫</mark>是標準手法。
+    </p>
+  </div>
+
+  <div class="grid-2 anim-stagger" style="margin-top: 20px; flex: 1; min-height: 0;">
+    <div class="col">
+      <div class="kicker">9 種 EVENT 全集</div>
+      <div class="event-grid">
+        <div class="event-item known"><span class="event-name">PreToolUse</span><span class="event-desc">工具跑之前 ✓ 已會</span></div>
+        <div class="event-item known"><span class="event-name">PostToolUse</span><span class="event-desc">工具跑之後 ✓ 已會</span></div>
+        <div class="event-item"><span class="event-name">Notification</span><span class="event-desc">模型要 permission 或 idle 60s</span></div>
+        <div class="event-item"><span class="event-name">Stop</span><span class="event-desc">Claude 回完 · 整段結束</span></div>
+        <div class="event-item"><span class="event-name">SubagentStop</span><span class="event-desc">Task subagent 結束</span></div>
+        <div class="event-item"><span class="event-name">PreCompact</span><span class="event-desc">自動或手動 compact 之前</span></div>
+        <div class="event-item"><span class="event-name">UserPromptSubmit</span><span class="event-desc">你 submit prompt 之前</span></div>
+        <div class="event-item"><span class="event-name">SessionStart</span><span class="event-desc">session 開啟或恢復</span></div>
+        <div class="event-item"><span class="event-name">SessionEnd</span><span class="event-desc">session 結束</span></div>
+      </div>
+
+      <div class="callout-warn" style="margin-top: 16px;">
+        <span>⚠</span>
+        <span>每個 event + matcher 組合 stdin 結構都不同 — 文件不一定寫齊,版本還會新增欄位</span>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="kicker">STDIN 結構不一樣 · 兩個對照</div>
+      <div class="grid-2" style="gap: 12px; margin-top: 6px;">
+        <div>
+          <div class="meta" style="color: var(--coral); margin-bottom: 4px;">PostToolUse + TodoWrite</div>
+          <pre class="code" style="font-size: 11px; padding: 12px; line-height: 1.55;"><span class="tok-punct">{</span>
+  <span class="tok-prop">"hook_event_name"</span>: <span class="tok-str">"PostToolUse"</span>,
+  <span class="tok-prop">"tool_name"</span>: <span class="tok-str">"TodoWrite"</span>,
+  <span class="tok-prop">"tool_input"</span>: <span class="tok-punct">{</span> <span class="tok-prop">"todos"</span>: [] <span class="tok-punct">}</span>,
+  <span class="tok-prop">"tool_response"</span>: <span class="tok-punct">{</span>
+    <span class="tok-prop">"oldTodos"</span>: [],
+    <span class="tok-prop">"newTodos"</span>: []
+  <span class="tok-punct">}</span>
+<span class="tok-punct">}</span>
+<span class="tok-com">// ↑ Post 才有 tool_response</span></pre>
+        </div>
+        <div>
+          <div class="meta" style="color: var(--coral); margin-bottom: 4px;">Stop hook</div>
+          <pre class="code" style="font-size: 11px; padding: 12px; line-height: 1.55;"><span class="tok-punct">{</span>
+  <span class="tok-prop">"session_id"</span>: <span class="tok-str">"af9f50b6-..."</span>,
+  <span class="tok-prop">"hook_event_name"</span>: <span class="tok-str">"Stop"</span>,
+  <span class="tok-prop">"stop_hook_active"</span>: <span class="tok-bool">false</span>
+<span class="tok-punct">}</span>
+<span class="tok-com">// ↑ Stop 自己的欄位</span>
+<span class="tok-com">// ↑ 沒有 tool_input、tool_response</span></pre>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <div class="kicker">解法 · META HOOK 把 STDIN 印出來</div>
+        <pre class="code" style="font-size: 12px; padding: 12px; line-height: 1.55; margin-top: 6px;"><span class="tok-prop">"PreToolUse"</span>: [
+  <span class="tok-punct">{</span>
+    <span class="tok-prop">"matcher"</span>: <span class="tok-str">"*"</span>,
+    <span class="tok-prop">"hooks"</span>: [<span class="tok-punct">{</span>
+      <span class="tok-prop">"type"</span>: <span class="tok-str">"command"</span>,
+      <span class="tok-prop">"command"</span>: <span class="tok-str">"jq . &gt; pre-log.json"</span>
+    <span class="tok-punct">}</span>]
+  <span class="tok-punct">}</span>
+]
+<span class="tok-com">// ↑ jq . = pretty-print stdin</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="body-sm anim-delayed" style="margin-top: 14px; color: var(--warm-silver); font-size: 14px; font-style: italic;">
+    → workflow:配 logger → cat log → 寫邏輯 → 撤 logger。比看文件可靠 — 文件可能漏新欄位、版本還會變。
+  </p>
+
+  <details class="qa-panel anim-delayed" open>
+    <summary>常見問題</summary>
+    <div class="qa-content">
+      <div class="qa-item"><div class="qa-q">7 種其他 hook 各自典型用途?</div><div class="qa-a">SessionStart 載入 context · SessionEnd 清理/備份 · UserPromptSubmit 改寫 prompt · Stop 跑完總結 · PreCompact 壓縮前 dump · SubagentStop 收 multi-agent · Notification idle 提醒。</div></div>
+      <div class="qa-item"><div class="qa-q">jq 沒裝怎麼辦?</div><div class="qa-a">brew install jq / apt install jq · 或用 cat 直接看,但沒 pretty-print。</div></div>
+      <div class="qa-item"><div class="qa-q">log file 會 commit 進 git?</div><div class="qa-a">該 .gitignore — stdin 可能含敏感檔案內容。</div></div>
+      <div class="qa-item"><div class="qa-q">matcher: "*" 跟 "" 差在哪?</div><div class="qa-a">行為實務上一致都是抓所有 — 但 "*" 比較直觀。</div></div>
+    </div>
+  </details>
+
+  <div class="chrome bottom">
+    <span>先 log · 後寫 · 工程習慣</span>
+    <span><b>08</b> / 09</span>
+  </div>
+
+  <aside class="notes">前 7 站都在講 PreToolUse 跟 PostToolUse,這站把「其他 7 種 hook」跟「debug 不熟 hook 的方法」一起講完。先看左上 — Claude Code 一共有 9 種 hook event。Pre/Post 是最常用的兩種,剩下 7 種各自有用途,這站不展開細講每種,只要把握「Pre/Post 不是全部」這個概念就好。Q&A 那邊我有列每種的典型用途,回去查就有。但這引出寫 hook 的真實麻煩 — stdin 結構會變。看右邊兩個 stdin 範例:第一個 PostToolUse + TodoWrite,多了 tool_response 跟 oldTodos / newTodos;第二個 Stop hook,只有 stop_hook_active 一個 boolean,連 tool_input、tool_response 都沒有。每個 hook event + matcher 組合都長不一樣,文件不一定寫齊全,版本變動還會新增欄位。寫 hook 時你不能假設 stdin 長什麼樣,要實際看。解法:寫一個 logger hook 把 stdin 印出來看。看下半的 settings 片段 — matcher 寫 *(任何 tool 都觸發),command 一行 jq . > pre-log.json。jq 是 CLI 的 JSON parser,jq . 就是 pretty-print stdin。一行就配好了,不用寫 .js script。注意 — 這 demo repo 的 settings.example.json 已經配好了兩個 logger,Pre 跟 Post 都有。所以我們前面跑了 init 示範、read_hook 示範、query_hook 示範這些之後,repo 根目錄就會有 pre-log.json 跟 post-log.json。我現場 cat 一下 — cat pre-log.json。看,這就是真實 PreToolUse 的 stdin,剛剛 read_hook 觸發時 stdin 收到的就是這個結構,跟 Slide 2 我給的範例完全對得起來。所以寫新 hook 的 workflow 是 — 一,配 logger 跑幾次目標 hook event。二,cat log 看真實 stdin 結構。三,根據實際欄位寫真正的邏輯。四,寫完了再把 logger 撤掉,或留在 dev 環境用。比看文件可靠很多。先 log 後寫是 production 工程師寫 hook 的標準手法。這就把 hook 教學 8 站走完了。從 Slide 11 那一句「Pre 之前 / Post 之後」展開到 9 種 hook event、4 個 production case、加 1 個 meta hook,加 init 跟 read_hook 跟 query_hook 三個 live demo。後面接 Slide 14 反證跟 Slide 15 落地優先級,收尾整場。</aside>
+</section>
+
+</div>
+</div>
+
+<div class="hud" id="hud">
+  <button id="prev" title="上一張 (←)">‹</button>
+  <span class="pos"><span id="cur">00</span> / <span id="total">09</span></span>
+  <button id="next" title="下一張 (→)">›</button>
+  <span style="color:#404040;">|</span>
+  <span><span class="key">V</span>vertical</span>
+  <span><span class="key">S</span>speaker</span>
+  <span><span class="key">ESC</span>index</span>
+</div>
+
+<div class="index-overlay" id="indexOverlay">
+  <div class="index-grid" id="indexGrid"></div>
+</div>
+
+<script>
+(function () {
+  const SLIDE_W = 1920;
+  const SLIDE_H = 1080;
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  const stage  = document.getElementById('stage');
+  const deck   = document.getElementById('deck');
+  const hud    = document.getElementById('hud');
+  const indexOverlay = document.getElementById('indexOverlay');
+  const indexGrid    = document.getElementById('indexGrid');
+  const STORAGE_KEY  = 'hooks-deck-pos-v1';
+  const channel = ('BroadcastChannel' in window) ? new BroadcastChannel('hooks-deck-sync') : null;
+
+  let cur = 0;
+  let isVMode = false;
+  const isSpeakerView = new URLSearchParams(window.location.search).get('view') === 'speaker';
+
+  try {
+    const saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+    if (!isNaN(saved) && saved >= 0 && saved < total) cur = saved;
+  } catch (_) {}
+
+  function fit() {
+    if (isVMode) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const scale = Math.min(vw / SLIDE_W, vh / SLIDE_H);
+    deck.style.transform = `scale(${scale})`;
+  }
+
+  function show(i, opts) {
+    opts = opts || {};
+    cur = Math.max(0, Math.min(total - 1, i));
+    if (!isVMode) {
+      slides.forEach((s, idx) => s.classList.toggle('active', idx === cur));
+    }
+    document.getElementById('cur').textContent = String(cur).padStart(2, '0');
+    try { localStorage.setItem(STORAGE_KEY, String(cur)); } catch (_) {}
+    if (isVMode) {
+      slides[cur].scrollIntoView({ behavior: opts.smooth ? 'smooth' : 'auto', block: 'start' });
+    }
+    if (channel && !opts.fromChannel) {
+      channel.postMessage({ type: 'slide-change', slide: cur, source: isSpeakerView ? 'speaker' : 'main' });
+    }
+  }
+
+  function next() { show(cur + 1); }
+  function prev() { show(cur - 1); }
+
+  function toggleVMode() {
+    isVMode = !isVMode;
+    document.body.classList.toggle('vmode', isVMode);
+    if (isVMode) {
+      slides.forEach(s => s.classList.add('active'));
+      requestAnimationFrame(() => slides[cur].scrollIntoView({ block: 'start' }));
+    } else {
+      slides.forEach((s, idx) => s.classList.toggle('active', idx === cur));
+      fit();
+    }
+  }
+
+  function openSpeakerView() {
+    const url = window.location.pathname + '?view=speaker#' + cur;
+    const w = window.open(url, 'hooks-deck-speaker', 'width=1200,height=900,resizable=yes,scrollbars=yes');
+    if (w) w.focus();
+  }
+
+  function buildIndex() {
+    indexGrid.innerHTML = '';
+    slides.forEach((s, i) => {
+      const card = document.createElement('div');
+      card.className = 'index-card';
+      const label = s.dataset.screenLabel || ('slide ' + i);
+      const parts = label.split(' ');
+      parts.shift();
+      const name = parts.join(' ') || label;
+      card.innerHTML =
+        '<div class="num">' + String(i).padStart(2,'0') + '</div>' +
+        '<div class="name">' + name + '</div>' +
+        '<div class="desc">' + (s.classList.contains('dark') ? 'dark theme' : 'light theme') + '</div>';
+      card.addEventListener('click', () => {
+        show(i);
+        indexOverlay.classList.remove('active');
+      });
+      indexGrid.appendChild(card);
+    });
+  }
+  function toggleIndex() { indexOverlay.classList.toggle('active'); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (indexOverlay.classList.contains('active')) {
+      if (e.key === 'Escape') indexOverlay.classList.remove('active');
+      return;
+    }
+    if (isSpeakerView) {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(cur + 1, { fromChannel: true }); }
+      if (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    { e.preventDefault(); show(cur - 1, { fromChannel: true }); }
+      return;
+    }
+    switch (e.key) {
+      case 'ArrowRight': case 'PageDown': case ' ': e.preventDefault(); next(); break;
+      case 'ArrowLeft':  case 'PageUp':              e.preventDefault(); prev(); break;
+      case 'Home':       e.preventDefault(); show(0); break;
+      case 'End':        e.preventDefault(); show(total - 1); break;
+      case 'Escape':     e.preventDefault(); toggleIndex(); break;
+      case 'v': case 'V': e.preventDefault(); toggleVMode(); break;
+      case 's': case 'S': e.preventDefault(); openSpeakerView(); break;
+    }
+  });
+
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('next').addEventListener('click', next);
+
+  if (channel) {
+    channel.onmessage = (ev) => {
+      const m = ev.data || {};
+      if (m.type === 'slide-change') {
+        if (isSpeakerView && m.source === 'main') show(m.slide, { fromChannel: true, smooth: true });
+      }
+      if (m.type === 'request-state' && !isSpeakerView) {
+        channel.postMessage({ type: 'slide-change', slide: cur, source: 'main' });
+      }
+    };
+    if (isSpeakerView) channel.postMessage({ type: 'request-state' });
+  }
+
+  if (isSpeakerView) {
+    document.title = '🎙 Speaker View · ' + document.title;
+    isVMode = true;
+    document.body.classList.add('vmode');
+    slides.forEach(s => s.classList.add('active'));
+    const banner = document.createElement('div');
+    banner.style.cssText =
+      'position: sticky; top: 0; z-index: 50;' +
+      'background: var(--terracotta); color: var(--surface);' +
+      'padding: 10px 24px; font: 500 13px/1 var(--font-mono);' +
+      'letter-spacing: 0.15em; text-transform: uppercase;' +
+      'display: flex; justify-content: space-between; align-items: center;';
+    banner.innerHTML = '<span>🎙 Speaker View · 同步主視窗 · ←→ 獨立預覽</span><span>' + total + ' slides</span>';
+    document.body.insertBefore(banner, document.body.firstChild);
+    hud.style.display = 'none';
+    const initial = parseInt(window.location.hash.replace('#', ''), 10);
+    if (!isNaN(initial)) {
+      cur = initial;
+      requestAnimationFrame(() => slides[cur].scrollIntoView({ block: 'start' }));
+    }
+  }
+
+  window.addEventListener('resize', fit);
+  buildIndex();
+  document.getElementById('total').textContent = String(total).padStart(2, '0');
+  fit();
+  show(cur, { fromChannel: true });
+})();
+</script>
+
+</body>
+</html>
