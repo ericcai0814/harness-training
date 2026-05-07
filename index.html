@@ -1,0 +1,1035 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head><script>(function(){
+  function makeStore(){
+    var data = {};
+    var api = {
+      getItem: function(k){ return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem: function(k, v){ data[k] = String(v); },
+      removeItem: function(k){ delete data[k]; },
+      clear: function(){ data = {}; },
+      key: function(i){ return Object.keys(data)[i] || null; }
+    };
+    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(data).length; } });
+    return api;
+  }
+  function tryShim(name){
+    var works = false;
+    try { works = !!window[name] && typeof window[name].getItem === 'function'; void window[name].length; }
+    catch (_) { works = false; }
+    if (works) return;
+    try { Object.defineProperty(window, name, { configurable: true, value: makeStore() }); }
+    catch (_) { try { window[name] = makeStore(); } catch (__) {} }
+  }
+  tryShim('localStorage');
+  tryShim('sessionStorage');
+})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness Engineering — 你早就在做了 · ewill Meetup</title>
+<style>
+:root{
+  --bg:#f5f4ed;--surface:#faf9f5;--warm-sand:#e8e6dc;--border:#f0eee6;--border-warm:#e8e6dc;--ring-warm:#d1cfc5;
+  --fg:#141413;--charcoal:#4d4c48;--olive:#5e5d59;--stone:#87867f;--dark-warm:#3d3d3a;--warm-silver:#b0aea5;
+  --dark-bg:#141413;--dark-surface:#30302e;--dark-border:#30302e;
+  --accent:#c96442;--accent-soft:#d97757;--error:#b53333;--focus:#3898ec;
+  --serif:'Iowan Old Style','Charter','Newsreader',Georgia,'Songti TC','STSong','LiSong Pro','Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;
+  --mono:'JetBrains Mono','Fira Code','IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a1a18;font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{color:var(--fg)}
+::selection{background:var(--accent);color:var(--surface)}
+#stage{position:absolute;top:50%;left:50%;width:1920px;height:1080px;transform:translate(-50%,-50%) scale(var(--scale,1));transform-origin:center center;background:var(--bg);box-shadow:0 24px 64px rgba(0,0,0,.4);overflow:hidden}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;display:flex;flex-direction:column;padding:88px 112px;opacity:0;pointer-events:none;transition:opacity .55s ease}
+.slide.is-active{opacity:1;pointer-events:auto}
+.slide.light{background:var(--bg);color:var(--fg)}
+.slide.dark{background:var(--dark-bg);color:#ece9dc}
+.slide.hero.light{background:radial-gradient(circle at 30% 20%,#fbf9ef 0%,var(--bg) 70%)}
+.slide.hero.dark{background:radial-gradient(circle at 70% 30%,#1f1f1d 0%,#101010 80%)}
+.slide.light::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(0,0,0,.012) 1px,transparent 1px);background-size:3px 3px;z-index:0}
+.slide > *{position:relative;z-index:1}
+.slide.hero .accent-bar{position:absolute;left:112px;top:88px;width:6px;height:120px;background:var(--accent);border-radius:2px}
+.chrome{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--olive);margin-bottom:64px}
+.slide.dark .chrome{color:var(--warm-silver)}
+.slide.hero.dark .chrome{color:var(--warm-silver)}
+.chrome .l,.chrome .r{display:flex;align-items:center;gap:24px}
+.chrome .sep{width:32px;height:1px;background:currentColor;opacity:.4}
+.chrome .tag{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;padding:5px 11px;border:1px solid currentColor;opacity:.85;border-radius:2px}
+.chrome .accent-tag{background:var(--accent);color:var(--surface);border-color:var(--accent);opacity:1}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--stone);padding-top:48px}
+.slide.dark .foot{color:var(--warm-silver);opacity:.7}
+.foot .title{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:.02em;text-transform:none;font-size:18px;color:var(--olive)}
+.slide.dark .foot .title{color:var(--warm-silver)}
+.body{flex:1;display:flex;flex-direction:column;min-height:0}
+.kicker{font-family:var(--mono);font-size:14px;letter-spacing:.32em;text-transform:uppercase;color:var(--olive);font-weight:500;margin-bottom:24px}
+.slide.dark .kicker{color:var(--warm-silver)}
+.kicker.accent{color:var(--accent)}
+.eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.display{font-family:var(--serif);font-weight:500;font-size:208px;line-height:1.04;letter-spacing:-.018em;color:var(--fg)}
+.slide.dark .display{color:#ece9dc}
+.h1{font-family:var(--serif);font-weight:500;font-size:104px;line-height:1.06;letter-spacing:-.012em;color:var(--fg)}
+.slide.dark .h1{color:#ece9dc}
+.h2{font-family:var(--serif);font-weight:500;font-size:72px;line-height:1.12;letter-spacing:-.005em}
+.h3{font-family:var(--serif);font-weight:500;font-size:52px;line-height:1.18;letter-spacing:-.003em}
+.h4{font-family:var(--serif);font-weight:500;font-size:38px;line-height:1.25}
+.h5{font-family:var(--serif);font-weight:500;font-size:30px;line-height:1.32}
+.lead{font-family:var(--sans);font-weight:400;font-size:32px;line-height:1.6;color:var(--olive);letter-spacing:.005em}
+.slide.dark .lead{color:var(--warm-silver)}
+.body-text{font-family:var(--sans);font-weight:400;font-size:24px;line-height:1.6;color:var(--charcoal);letter-spacing:.005em}
+.slide.dark .body-text{color:#cfccc1}
+.small{font-family:var(--sans);font-weight:400;font-size:18px;line-height:1.55;color:var(--olive)}
+.slide.dark .small{color:var(--warm-silver)}
+.mono{font-family:var(--mono);font-size:18px;line-height:1.5;color:var(--charcoal);letter-spacing:0}
+.slide.dark .mono{color:#cfccc1}
+.meta-mono{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--stone);font-weight:500}
+.slide.dark .meta-mono{color:var(--warm-silver);opacity:.7}
+.serif-italic{font-family:var(--serif);font-style:italic;font-weight:400}
+.accent-text{color:var(--accent)}
+.muted{color:var(--olive)}
+.slide.dark .muted{color:var(--warm-silver)}
+.hi{background:linear-gradient(180deg,transparent 60%,rgba(201,100,66,.18) 60%);padding:0 .04em}
+.slide.dark .hi{background:linear-gradient(180deg,transparent 60%,rgba(217,119,87,.28) 60%)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:80px;flex:1;align-items:stretch}
+.split.top{align-items:start}
+.split-55{display:grid;grid-template-columns:55fr 45fr;gap:80px;flex:1;align-items:stretch}
+.split-55.top{align-items:start}
+.split-55.center{align-items:center}
+.split-40-60{display:grid;grid-template-columns:40fr 60fr;gap:80px;flex:1;align-items:stretch}
+.col{display:flex;flex-direction:column;gap:32px}
+.col-tight{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;align-items:center;gap:32px}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1}
+.divider{height:1px;background:var(--border-warm);margin:24px 0}
+.slide.dark .divider{background:var(--dark-surface)}
+.divider-v{width:1px;height:100%;background:var(--border-warm);align-self:stretch}
+.slide.dark .divider-v{background:var(--dark-surface)}
+.spacer-sm{height:16px}.spacer-md{height:32px}.spacer-lg{height:64px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:36px 40px}
+.slide.dark .card{background:var(--dark-surface);border-color:var(--dark-surface)}
+.card.accent-top{border-top:3px solid var(--accent)}
+.card.accent-left{border-left:3px solid var(--accent)}
+.callout{padding:32px 40px;background:rgba(201,100,66,.06);border-left:3px solid var(--accent);border-radius:4px;font-family:var(--serif);font-size:30px;line-height:1.4;color:var(--fg);font-weight:500}
+.slide.dark .callout{background:rgba(217,119,87,.1);color:#ece9dc}
+.callout .cite{display:block;margin-top:14px;font-family:var(--mono);font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--olive);font-weight:500}
+.slide.dark .callout .cite{color:var(--warm-silver)}
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;padding:6px 14px;border-radius:999px;background:var(--warm-sand);color:var(--charcoal)}
+.slide.dark .pill{background:var(--dark-surface);color:var(--warm-silver)}
+.pill.accent{background:var(--accent);color:var(--surface)}
+.pill.outline{background:transparent;border:1px solid currentColor;opacity:.85}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .85s cubic-bezier(.2,.7,.2,1) .15s,transform .85s cubic-bezier(.2,.7,.2,1) .15s}
+.is-active .fade-up{opacity:1;transform:translateY(0)}
+.fade-in{opacity:0;transition:opacity .9s ease .25s}
+.is-active .fade-in{opacity:1}
+.delay-1{transition-delay:.25s !important}
+.delay-2{transition-delay:.4s !important}
+.delay-3{transition-delay:.55s !important}
+.delay-4{transition-delay:.7s !important}
+.delay-5{transition-delay:.85s !important}
+.delay-6{transition-delay:1.0s !important}
+.delay-7{transition-delay:1.15s !important}
+.delay-8{transition-delay:1.3s !important}
+.anim-stagger-list > *{opacity:0;transform:translateY(18px);transition:opacity .65s cubic-bezier(.2,.7,.2,1),transform .65s cubic-bezier(.2,.7,.2,1)}
+.is-active .anim-stagger-list > *{opacity:1;transform:translateY(0)}
+.is-active .anim-stagger-list > *:nth-child(1){transition-delay:.20s}
+.is-active .anim-stagger-list > *:nth-child(2){transition-delay:.32s}
+.is-active .anim-stagger-list > *:nth-child(3){transition-delay:.44s}
+.is-active .anim-stagger-list > *:nth-child(4){transition-delay:.56s}
+.is-active .anim-stagger-list > *:nth-child(5){transition-delay:.68s}
+.is-active .anim-stagger-list > *:nth-child(6){transition-delay:.80s}
+.is-active .anim-stagger-list > *:nth-child(7){transition-delay:.92s}
+.is-active .anim-stagger-list > *:nth-child(8){transition-delay:1.04s}
+.anim-flow > *{opacity:0;transform:translateX(-12px);transition:opacity .55s ease,transform .55s ease}
+.is-active .anim-flow > *{opacity:1;transform:translateX(0)}
+.is-active .anim-flow > *:nth-child(1){transition-delay:.20s}
+.is-active .anim-flow > *:nth-child(2){transition-delay:.30s}
+.is-active .anim-flow > *:nth-child(3){transition-delay:.40s}
+.is-active .anim-flow > *:nth-child(4){transition-delay:.50s}
+.is-active .anim-flow > *:nth-child(5){transition-delay:.60s}
+.is-active .anim-flow > *:nth-child(6){transition-delay:.70s}
+.is-active .anim-flow > *:nth-child(7){transition-delay:.80s}
+.is-active .anim-flow > *:nth-child(8){transition-delay:.90s}
+.is-active .anim-flow > *:nth-child(9){transition-delay:1.00s}
+.is-active .anim-flow > *:nth-child(10){transition-delay:1.10s}
+.is-active .anim-flow > *:nth-child(11){transition-delay:1.20s}
+.anim-compare-l,.anim-compare-r{opacity:0;transition:opacity .75s ease .25s,transform .75s ease .25s}
+.anim-compare-l{transform:translateX(-12px)}
+.anim-compare-r{transform:translateX(12px)}
+.is-active .anim-compare-l,.is-active .anim-compare-r{opacity:1;transform:translateX(0)}
+.anim-quote{opacity:0;transform:translateY(18px) scale(.985);transition:opacity .9s cubic-bezier(.2,.7,.2,1) .55s,transform .9s cubic-bezier(.2,.7,.2,1) .55s}
+.is-active .anim-quote{opacity:1;transform:translateY(0) scale(1)}
+.anim-stack > *{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease}
+.is-active .anim-stack > *{opacity:1;transform:translateY(0)}
+.is-active .anim-stack > *:nth-last-child(1){transition-delay:.20s}
+.is-active .anim-stack > *:nth-last-child(2){transition-delay:.32s}
+.is-active .anim-stack > *:nth-last-child(3){transition-delay:.44s}
+.is-active .anim-stack > *:nth-last-child(4){transition-delay:.56s}
+.is-active .anim-stack > *:nth-last-child(5){transition-delay:.68s}
+.is-active .anim-stack > *:nth-last-child(6){transition-delay:.80s}
+#nav{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:14px;padding:10px 18px;background:rgba(20,20,19,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:999px;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.7);user-select:none}
+#nav .counter{font-variant-numeric:tabular-nums;font-weight:500}
+#nav .dots{display:flex;gap:7px}
+#nav .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);border:0;padding:0;cursor:pointer;transition:all .25s ease}
+#nav .dot:hover{background:rgba(255,255,255,.55);transform:scale(1.2)}
+#nav .dot.active{background:#fff;width:22px;border-radius:999px}
+#nav .arrow{background:transparent;border:0;color:inherit;cursor:pointer;font-family:var(--mono);font-size:14px;padding:4px 10px;border-radius:6px;transition:background .2s ease}
+#nav .arrow:hover{background:rgba(255,255,255,.1)}
+#hint{position:fixed;bottom:24px;right:32px;z-index:50;font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);pointer-events:none}
+#notes-panel{position:fixed;left:0;right:0;bottom:0;background:rgba(20,20,19,.96);backdrop-filter:blur(20px);color:#ece9dc;border-top:1px solid var(--accent);padding:32px 64px 40px 64px;max-height:46vh;overflow-y:auto;z-index:60;transform:translateY(100%);transition:transform .35s ease;font-family:var(--sans)}
+#notes-panel.is-open{transform:translateY(0)}
+#notes-panel .notes-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent-soft)}
+#notes-panel .notes-body{font-family:var(--sans);font-size:18px;line-height:1.7;color:#ece9dc;font-weight:300;letter-spacing:.005em;max-width:1400px}
+#notes-panel .notes-body strong{color:var(--accent-soft);font-weight:500}
+#notes-panel .notes-body p{margin-bottom:10px}
+.slide aside.notes{display:none}
+#overview{position:fixed;inset:0;z-index:80;background:rgba(20,20,19,.94);backdrop-filter:blur(20px);display:none;padding:48px 64px;overflow-y:auto}
+#overview.is-open{display:block}
+#overview h2{color:#ece9dc;font-family:var(--mono);font-size:13px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:32px;font-weight:500}
+#overview .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:20px}
+#overview .thumb{aspect-ratio:16/9;background:var(--bg);border-radius:6px;cursor:pointer;position:relative;overflow:hidden;border:2px solid transparent;transition:border-color .2s ease,transform .2s ease;display:flex;flex-direction:column;justify-content:space-between;padding:16px 18px;font-family:var(--serif);color:var(--fg)}
+#overview .thumb.dark{background:var(--dark-bg);color:#ece9dc}
+#overview .thumb.hero{background:linear-gradient(135deg,#fbf9ef 0%,var(--bg) 100%)}
+#overview .thumb.hero.dark{background:linear-gradient(135deg,#1f1f1d 0%,#0d0d0d 100%);color:#ece9dc}
+#overview .thumb:hover{border-color:var(--accent);transform:translateY(-2px)}
+#overview .thumb.active{border-color:var(--accent)}
+#overview .thumb .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;font-weight:500}
+#overview .thumb .name{font-size:14px;line-height:1.25;font-weight:500}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{background:#fff;overflow:visible}
+  #stage{position:static;transform:none;width:1920px;height:auto;box-shadow:none;background:transparent}
+  .slide{position:relative;inset:auto;page-break-after:always;opacity:1 !important;pointer-events:auto;transform:none !important;transition:none !important;width:1920px;height:1080px}
+  .slide *,.slide :before,.slide :after{transition:none !important;animation:none !important;transform:none !important;opacity:1 !important}
+  #nav,#hint,#notes-panel,#overview{display:none !important}
+  .slide aside.notes{display:block;position:absolute;left:112px;bottom:24px;right:112px;font-size:13px;color:var(--olive);font-family:var(--sans);line-height:1.5;border-top:1px solid var(--border-warm);padding-top:14px;z-index:10}
+}
+.cover{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1}
+.cover .display-line{font-size:184px;line-height:1.0;letter-spacing:-.02em}
+.cover .display-line .accent-mark{display:inline-block;width:120px;height:6px;background:var(--accent);border-radius:3px;margin:0 28px 24px 0;vertical-align:middle}
+.cover .sub{font-family:var(--serif);font-style:italic;font-size:64px;color:var(--olive);font-weight:400;margin-top:36px;line-height:1.2}
+.cover .meta{margin-top:120px;font-family:var(--mono);font-size:18px;letter-spacing:.22em;text-transform:uppercase;color:var(--stone)}
+.cover .meta .accent{color:var(--accent)}
+.pain-list{list-style:none;padding:0}
+.pain-list li{font-family:var(--serif);font-size:48px;font-weight:500;line-height:1.4;padding:18px 0;color:var(--charcoal);border-bottom:1px solid var(--border-warm);display:flex;align-items:baseline;gap:24px}
+.pain-list li:last-child{border-bottom:0}
+.pain-list .num{font-family:var(--mono);font-size:18px;color:var(--accent);letter-spacing:.18em;font-weight:500;min-width:40px}
+.pain-right{display:flex;flex-direction:column;justify-content:center;height:100%;padding-left:64px;border-left:1px solid var(--border-warm)}
+.video-quote{font-family:var(--serif);font-size:84px;line-height:1.18;font-weight:500;color:#ece9dc;letter-spacing:-.005em;max-width:1100px}
+.video-quote .qmark{display:inline-block;font-style:italic;color:var(--accent);font-size:140px;line-height:0;vertical-align:-.18em;margin-right:8px}
+.video-meta{font-family:var(--mono);font-size:17px;letter-spacing:.2em;text-transform:uppercase;color:var(--warm-silver);margin-top:48px;display:flex;gap:32px;align-items:center}
+.video-meta .sep{width:24px;height:1px;background:currentColor;opacity:.4}
+.video-url{font-family:var(--mono);font-size:22px;color:var(--accent-soft);letter-spacing:.02em;word-break:break-all;text-decoration:none;border-bottom:1px solid var(--accent);padding-bottom:4px;margin-top:24px;display:inline-block}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;background:var(--surface);padding:28px;border-radius:12px}
+.qr-wrap .qr-img{width:300px;height:300px;background:#fff;border-radius:6px;display:block;filter:contrast(1.05)}
+.qr-wrap .qr-cap{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--charcoal);font-weight:500}
+.roadmap{display:grid;grid-template-columns:repeat(6,1fr);gap:0;flex:1;align-items:stretch;border-top:1px solid var(--border-warm);border-bottom:1px solid var(--border-warm)}
+.roadmap .stage{position:relative;padding:36px 28px 36px 24px;border-right:1px solid var(--border-warm);display:flex;flex-direction:column;gap:18px}
+.roadmap .stage:last-child{border-right:0}
+.roadmap .stage .num{font-family:var(--serif);font-size:84px;font-weight:500;line-height:.85;color:var(--accent);letter-spacing:-.02em;font-feature-settings:"tnum"}
+.roadmap .stage .label{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--olive);font-weight:500}
+.roadmap .stage .name{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1.2;color:var(--fg)}
+.roadmap .stage .desc{font-family:var(--sans);font-size:18px;line-height:1.5;color:var(--olive);margin-top:auto}
+.roadmap .stage:nth-child(6) .num{font-style:italic}
+.flow-atomic{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:18px;color:var(--charcoal);font-weight:500}
+.flow-atomic .step{padding:10px 16px;background:var(--surface);border:1px solid var(--border-warm);border-radius:6px}
+.flow-atomic .arr{color:var(--accent);font-size:20px}
+.three-roads{display:flex;flex-direction:column;gap:10px}
+.road-card{display:grid;grid-template-columns:auto 1fr;gap:20px;padding:14px 22px;background:var(--surface);border:1px solid var(--border);border-radius:10px;align-items:start}
+.road-card.muted-card{opacity:.6}
+.road-card .badge{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;padding:5px 11px;border-radius:6px;background:var(--warm-sand);color:var(--charcoal);display:inline-block;white-space:nowrap}
+.road-card.active .badge{background:var(--accent);color:var(--surface)}
+.road-card .road-body .road-name{font-family:var(--serif);font-size:24px;font-weight:500;line-height:1.2;color:var(--fg);margin-bottom:2px}
+.road-card .road-body .road-desc{font-family:var(--sans);font-size:16px;line-height:1.45;color:var(--charcoal)}
+.road-card .road-body .ewill-tag{display:inline-block;margin-top:4px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.fc-steps{display:flex;flex-direction:column;gap:8px;flex:1}
+.fc-step{display:grid;grid-template-columns:96px 1fr 1.05fr;gap:24px;padding:11px 22px;background:var(--surface);border:1px solid var(--border);border-radius:10px;align-items:start}
+.fc-step.highlight{border-left:3px solid var(--accent)}
+.fc-step .stepnum{font-family:var(--serif);font-size:42px;font-weight:500;line-height:.9;color:var(--accent);letter-spacing:-.02em;font-feature-settings:"tnum"}
+.fc-step .stepnum .lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--olive);font-weight:500;margin-top:3px}
+.fc-step .step-text .step-title{font-family:var(--serif);font-size:21px;font-weight:500;line-height:1.25;color:var(--fg);margin-bottom:4px}
+.fc-step .step-text .step-sub{font-family:var(--sans);font-size:14px;line-height:1.45;color:var(--olive)}
+.fc-step .step-text .step-sub em{font-family:var(--serif);font-style:italic;color:var(--accent);font-weight:500}
+.fc-step .step-code{font-family:var(--mono);font-size:12px;line-height:1.4;color:var(--charcoal);background:var(--bg);padding:7px 11px;border-radius:6px;border:1px solid var(--border);white-space:pre-wrap;word-break:break-word}
+.fc-step .step-code .c{color:var(--stone)}
+.fc-step .step-code .k{color:var(--accent);font-weight:500}
+.fc-step .step-code .s{color:var(--charcoal)}
+.flow-6{display:grid;grid-template-columns:repeat(6,1fr);gap:0;align-items:stretch}
+.flow-6 .node{position:relative;padding:24px 18px 24px 24px;border-right:1px solid rgba(176,174,165,.2)}
+.flow-6 .node:last-child{border-right:0}
+.flow-6 .node .stepnum{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-soft);margin-bottom:14px;font-weight:500}
+.flow-6 .node .nodebody{font-family:var(--serif);font-size:22px;line-height:1.32;font-weight:500;color:#ece9dc}
+.flow-6 .node .nodemono{font-family:var(--mono);font-size:14px;color:var(--warm-silver);margin-top:10px;letter-spacing:.05em}
+.flow-6 .node::after{content:"";position:absolute;right:-7px;top:50%;width:14px;height:14px;border-right:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:translateY(-50%) rotate(-45deg)}
+.flow-6 .node:last-child::after{display:none}
+.giant-quote{font-family:var(--serif);font-size:124px;line-height:1.1;font-weight:500;letter-spacing:-.018em;color:#ece9dc;text-align:center}
+.giant-quote .accent{color:var(--accent-soft)}
+.giant-quote .em{font-style:italic;font-weight:500}
+.code-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:32px 36px;font-family:var(--mono);font-size:22px;line-height:1.65;color:var(--charcoal);position:relative}
+.code-box .code-head{position:absolute;top:-1px;right:-1px;font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--surface);background:var(--accent);padding:5px 12px;border-radius:0 10px 0 6px;font-weight:500}
+.code-box pre{font-family:inherit;white-space:pre;color:inherit}
+.code-box .kw{color:var(--accent);font-weight:500}
+.code-box .fn{color:var(--charcoal);font-weight:500}
+.code-box .co{color:var(--stone);font-style:italic}
+.loop-iters{display:flex;flex-direction:column;gap:16px}
+.loop-iter{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border-warm)}
+.loop-iter:last-child{border-bottom:0}
+.loop-iter .circle{width:54px;height:54px;border-radius:50%;border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:24px;font-weight:500;color:var(--accent);font-feature-settings:"tnum"}
+.loop-iter.done .circle{background:var(--accent);color:var(--surface)}
+.loop-iter .iter-text{font-family:var(--serif);font-size:24px;line-height:1.35;color:var(--fg);font-weight:500}
+.loop-iter .iter-text .arr{color:var(--accent);margin:0 8px}
+.loop-iter.done .iter-text{color:var(--accent)}
+.compare-box{background:var(--dark-surface);border-radius:12px;padding:36px 40px;height:100%;display:flex;flex-direction:column}
+.compare-box.you{border-top:3px solid var(--accent-soft)}
+.compare-box.model{border-top:3px solid var(--warm-silver)}
+.compare-box .compare-label{font-family:var(--mono);font-size:14px;letter-spacing:.24em;text-transform:uppercase;font-weight:500;color:var(--accent-soft);margin-bottom:8px}
+.compare-box.model .compare-label{color:var(--warm-silver)}
+.compare-box .compare-title{font-family:var(--serif);font-size:38px;font-weight:500;line-height:1.2;color:#ece9dc;margin-bottom:24px}
+.timeline-steps{list-style:none;padding:0;display:flex;flex-direction:column;gap:14px}
+.timeline-steps li{display:flex;gap:14px;align-items:baseline;font-family:var(--sans);font-size:22px;line-height:1.4;color:#ece9dc}
+.timeline-steps li .ord{font-family:var(--serif);font-style:italic;color:var(--accent-soft);font-size:24px;font-weight:500;min-width:28px}
+.msgs-array{font-family:var(--mono);font-size:16px;line-height:1.6;color:var(--warm-silver);white-space:pre;background:rgba(255,255,255,.04);padding:18px 20px;border-radius:8px;flex:1;overflow:hidden}
+.msgs-array .role{color:var(--accent-soft);font-weight:500}
+.msgs-array .ellip{color:#666;font-style:italic}
+.problems-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:32px;flex:1}
+.problem-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:36px 40px;display:flex;flex-direction:column;gap:14px}
+.problem-card .num{font-family:var(--serif);font-size:64px;font-weight:500;line-height:.9;color:var(--accent);letter-spacing:-.02em;font-feature-settings:"tnum"}
+.problem-card .pname{font-family:var(--serif);font-size:36px;font-weight:500;line-height:1.2;color:var(--fg)}
+.problem-card .pdesc{font-family:var(--sans);font-size:20px;line-height:1.55;color:var(--olive)}
+.problem-card .ptag{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:500;margin-top:auto;padding-top:16px;border-top:1px solid var(--border-warm)}
+.cap-row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.cap-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px 28px;display:flex;flex-direction:column;gap:10px}
+.cap-card .cap-num{font-family:var(--mono);font-size:13px;letter-spacing:.22em;color:var(--accent);font-weight:500;text-transform:uppercase}
+.cap-card .cap-name{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1.2;color:var(--fg)}
+.cap-card .cap-desc{font-family:var(--sans);font-size:17px;line-height:1.55;color:var(--olive)}
+.middle-quote{font-family:var(--serif);font-size:38px;line-height:1.4;font-weight:500;color:var(--fg);text-align:center;padding:24px 0;font-style:italic}
+.middle-quote::before,.middle-quote::after{content:"";display:inline-block;width:48px;height:1px;background:var(--accent);vertical-align:middle;margin:0 18px}
+.hook-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.hook-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 26px;display:flex;flex-direction:column;gap:10px}
+.hook-card.pre{border-left:3px solid var(--accent)}
+.hook-card.post{border-left:3px solid var(--olive)}
+.hook-card .hook-label{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:500}
+.hook-card.pre .hook-label{color:var(--accent)}
+.hook-card.post .hook-label{color:var(--olive)}
+.hook-card .hook-name{font-family:var(--serif);font-size:24px;font-weight:500;color:var(--fg)}
+.hook-card .hook-code{font-family:var(--mono);font-size:14px;line-height:1.5;color:var(--charcoal);background:var(--bg);padding:8px 12px;border-radius:4px;margin-top:4px}
+.bubbles-col{display:flex;flex-direction:column;gap:18px;align-items:flex-start;padding-top:24px}
+.bubble{background:var(--accent);color:var(--surface);font-family:var(--sans);font-size:24px;font-weight:400;padding:14px 22px;border-radius:18px 18px 4px 18px;max-width:80%;position:relative}
+.bubble:nth-child(2){background:var(--accent-soft);align-self:flex-end;border-radius:18px 18px 18px 4px}
+.bubble:nth-child(3){background:var(--accent);align-self:flex-end;border-radius:18px 18px 18px 4px}
+.bubble .seq{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.7;display:block;margin-bottom:4px}
+.stack-vis{display:flex;flex-direction:column-reverse;gap:6px;border-left:2px solid var(--accent);padding-left:24px;position:relative}
+.stack-vis::before{content:"用戶送出";font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-soft);position:absolute;top:-22px;left:24px;font-weight:500}
+.stack-vis::after{content:"模型實際讀到";font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--warm-silver);position:absolute;bottom:-26px;left:24px;font-weight:500;opacity:.8}
+.stack-layer{background:var(--dark-surface);border-radius:6px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;font-family:var(--sans);font-size:18px;font-weight:400;color:#ece9dc}
+.stack-layer.user-layer{background:var(--accent);color:var(--surface)}
+.stack-layer .lyr-tag{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--warm-silver);font-weight:500}
+.stack-layer.user-layer .lyr-tag{color:rgba(255,255,255,.7)}
+.round-task{display:flex;align-items:baseline;gap:24px;padding:18px 24px;background:var(--surface);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;margin-bottom:24px}
+.round-task .task-label{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.round-task .task-text{font-family:var(--serif);font-size:26px;font-weight:500;color:var(--fg)}
+.rounds{display:flex;flex-direction:column;gap:0;flex:1}
+.round-row{display:grid;grid-template-columns:90px 1fr 1fr;gap:32px;padding:20px 0 20px 0;border-top:1px solid var(--border-warm);align-items:start}
+.round-row:last-child{border-bottom:1px solid var(--border-warm)}
+.round-row.highlight{background:rgba(201,100,66,.04);margin:0 -16px;padding:20px 16px;border-left:3px solid var(--accent);border-top-color:rgba(201,100,66,.2);border-radius:6px 0 0 6px}
+.round-row .rname{font-family:var(--serif);font-size:36px;font-weight:500;color:var(--accent);font-feature-settings:"tnum";letter-spacing:-.01em;line-height:1}
+.round-row .rname .rsub{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--olive);font-weight:500;margin-top:6px}
+.round-row .rmodel,.round-row .rharness{display:flex;flex-direction:column;gap:8px}
+.round-row .rcol-label{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--olive);font-weight:500}
+.round-row .rcol-text{font-family:var(--sans);font-size:18px;line-height:1.55;color:var(--charcoal)}
+.round-row .rcol-text .think{font-family:var(--serif);font-style:italic;color:var(--fg)}
+.round-row .rcol-text .tool{font-family:var(--mono);font-size:14px;background:var(--warm-sand);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;font-weight:500}
+.round-row .rcol-text .hook{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:500;letter-spacing:.06em}
+.harness-table{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--dark-surface)}
+.harness-row{display:grid;grid-template-columns:subgrid;grid-column:1/-1;border-bottom:1px solid var(--dark-surface);padding:8px 24px 8px 0;align-items:center}
+.harness-row .hcol-1{font-family:var(--serif);font-size:22px;font-weight:500;color:#ece9dc;padding-left:24px}
+.harness-row .hcol-2{font-family:var(--sans);font-size:18px;color:var(--warm-silver);font-weight:300;position:relative;padding-left:30px}
+.harness-row .hcol-2::before{content:"→";position:absolute;left:0;top:50%;transform:translateY(-50%);color:var(--accent-soft);font-family:var(--mono);font-size:16px}
+.harness-final-callout{margin-top:18px;padding:16px 26px;background:rgba(217,119,87,.12);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;font-family:var(--serif);font-size:24px;font-weight:500;color:#ece9dc;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.harness-final-callout .equals{font-family:var(--mono);font-size:18px;color:var(--accent-soft);font-weight:500}
+.harness-final-callout .when{font-family:var(--serif);font-style:italic;color:var(--warm-silver);font-size:16px;font-weight:400;margin-left:auto}
+.evolution{display:flex;align-items:flex-end;justify-content:space-between;gap:0;padding:0 8px;height:140px;border-bottom:1px solid var(--border-warm);position:relative}
+.evolution .gen{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.evolution .gen .bar{width:40px;background:var(--charcoal);border-radius:3px 3px 0 0;position:relative}
+.evolution .gen .bar::after{content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:10px;height:10px;background:var(--accent);border-radius:50%}
+.evolution .gen .lbl{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--olive);font-weight:500;margin-top:6px}
+.evolution .gen .yr{font-family:var(--mono);font-size:11px;color:var(--stone);font-weight:500}
+.harness-layers-mini{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:18px}
+.harness-layers-mini .layer{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--olive);padding:8px 12px;text-align:center;background:var(--warm-sand);border-radius:4px;font-weight:500}
+.closing-mid-quote{font-family:var(--serif);font-size:54px;line-height:1.3;font-weight:500;color:var(--fg);text-align:center;font-style:italic}
+.closing-mid-quote .accent{color:var(--accent);font-style:normal;font-weight:500}
+.closing-big-quote{font-family:var(--serif);font-size:64px;line-height:1.3;font-weight:500;color:var(--fg);text-align:center;letter-spacing:-.005em}
+.closing-big-quote .em{background:linear-gradient(180deg,transparent 60%,rgba(201,100,66,.18) 60%);padding:0 .04em}
+.comparison-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.cmp-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px 6px 18px;display:flex;flex-direction:column}
+.cmp-card.rule{border-top:3px solid var(--stone)}
+.cmp-card.hook{border-top:3px solid var(--olive)}
+.cmp-card.skill{border-top:3px solid var(--accent)}
+.cmp-card .cmp-head{font-family:var(--serif);font-size:24px;font-weight:500;line-height:1.1;color:var(--fg);margin-bottom:8px;display:flex;align-items:baseline;gap:10px;padding-bottom:6px;border-bottom:1px solid var(--border-warm)}
+.cmp-card .cmp-head .cmp-tag{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--olive);font-weight:500}
+.cmp-card .cmp-row{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:5px 0;border-bottom:1px dashed var(--border-warm);align-items:baseline}
+.cmp-card .cmp-row:last-child{border-bottom:0}
+.cmp-card .cmp-row .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--olive);font-weight:500;white-space:nowrap;line-height:1.3}
+.cmp-card .cmp-row .val{font-family:var(--sans);font-size:13px;line-height:1.4;color:var(--charcoal);font-weight:400}
+.cmp-card .cmp-row .val strong{color:var(--accent);font-weight:500}
+.priority-mid{display:grid;grid-template-columns:1fr 1.1fr;gap:24px;margin-top:14px}
+.decision-tree{display:flex;flex-direction:column;gap:6px}
+.tree-step{display:grid;grid-template-columns:36px 1fr;gap:14px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;align-items:center}
+.tree-step .step-no{font-family:var(--serif);font-size:24px;color:var(--accent);font-weight:500;line-height:1;font-feature-settings:"tnum"}
+.tree-step .tree-q{display:block;font-family:var(--serif);font-size:15px;color:var(--fg);line-height:1.35;font-weight:500;margin-bottom:2px}
+.tree-step .tree-a{display:block;font-family:var(--mono);font-size:11px;color:var(--olive);font-weight:500;letter-spacing:.04em}
+.tree-step .tree-a .yes{color:var(--accent);font-weight:500}
+.case-map{display:flex;flex-direction:column;gap:6px}
+.case-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;align-items:center}
+.case-row .case-q{font-family:var(--serif);font-size:14px;color:var(--fg);font-weight:500;line-height:1.3}
+.case-row .case-arrow{font-family:var(--mono);color:var(--accent);font-size:14px;font-weight:500}
+.case-row .case-pick-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:0}
+.case-row .case-pick{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--surface);background:var(--accent);padding:2px 9px;border-radius:3px;font-weight:500;white-space:nowrap;display:inline-block}
+.case-row .case-why{font-family:var(--sans);font-size:11px;color:var(--olive);font-style:italic;margin-top:3px}
+.priority-callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.priority-callout{background:rgba(201,100,66,.06);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px;font-family:var(--serif);font-size:14px;line-height:1.4;color:var(--fg);font-weight:500}
+.priority-callout .pc-head{display:block;color:var(--accent);font-size:14px;font-weight:500;margin-bottom:2px}
+.priority-callout .pc-sub{display:block;font-family:var(--sans);font-size:11px;color:var(--olive);font-weight:400;line-height:1.45}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section class="slide hero light is-active" data-screen-label="01 封面" data-theme="hero-light">
+<span class="accent-bar"></span>
+<div class="chrome"><div class="l"><span class="tag accent-tag">Harness Engineering</span><span class="sep"></span><span>ewill Meetup · 2026</span></div><div class="r"><span>01 / 16</span></div></div>
+<div class="cover">
+<div class="display fade-up"><span class="accent-mark"></span>Harness</div>
+<div class="display fade-up delay-1" style="margin-top:-4px">Engineering<span style="color:var(--accent)">.</span></div>
+<div class="sub fade-up delay-2">你早就在做了。</div>
+<div class="meta fade-up delay-3"><span class="accent">●</span>&nbsp;&nbsp;ewill Meetup&nbsp;&nbsp;·&nbsp;&nbsp;90 min&nbsp;&nbsp;·&nbsp;&nbsp;Eric&nbsp;&nbsp;·&nbsp;&nbsp;2026 — 05</div>
+</div>
+<div class="foot"><div class="title">A 6-Part field map of what you're already doing.</div><div>EWILL · DEV-AI-TRAINING</div></div>
+<aside class="notes"><p>今天不會講 <strong>Claude Code 怎麼用</strong>，你們都會用了，今天要回頭盤一件事：</p><p>你們在用的那些東西其實有共同的名字，叫 <strong>Harness Engineering</strong>，我借 Cab Late 那支影片的 6-Part 結構來盤，內容跟例子全換成 ewill 自己的，整場會回到一個問題——<strong>為什麼我們團隊 CC 用得越熟，反而越覺得「還沒上軌道」</strong>。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="02 ewill 痛點" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">問題框定 · Framing</span><span class="sep"></span><span>場景 · ewill 工程組</span></div><div class="r"><span>02 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">為什麼今天要花 90 分鐘？</div>
+<div class="h1 fade-up delay-1" style="max-width:1400px;margin-bottom:64px">你已經會了，但<br>團隊好像還沒<span class="hi">上來？</span></div>
+<div class="split" style="gap:96px">
+<div class="col-tight">
+<div class="kicker accent">你會的事</div>
+<ul class="pain-list anim-stagger-list">
+<li><span class="num">01</span><span>改 CLAUDE.md</span></li>
+<li><span class="num">02</span><span>寫 hook</span></li>
+<li><span class="num">03</span><span>用 skill</span></li>
+</ul>
+</div>
+<div class="pain-right">
+<div class="kicker fade-up delay-3" style="color:var(--accent)">但團隊⋯⋯</div>
+<div class="h2 fade-up delay-4" style="font-size:80px;line-height:1.05">規範一直<br><span style="color:var(--accent)">沒上來</span>。</div>
+<div class="lead fade-up delay-5" style="margin-top:32px;font-size:24px">工具會了 — 但團隊基礎設施還沒長出來。</div>
+</div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 02 — 開場痛點</div><div>02 / 16 · 為什麼？</div></div>
+<aside class="notes"><p>這頁是我自己加的，影片沒有，先把今天的真問題講清楚：</p><p>不是「不會用 CC」，是「會用了但團隊規範跟不上」，根本卡點是大家都把 CC 當<strong>個人技巧</strong>在學，沒人把它當<strong>團隊基礎設施</strong>在建。</p><p>今天 6-Part 看完你會發現，你已經在用的 <strong>CLAUDE.md、hook、skill</strong> 都是 harness 的不同切面，只是沒人把它們串起來叫同一個名字，今天就是要做這件串起來的事。</p></aside>
+</section>
+
+<section class="slide hero dark" data-screen-label="03 影片連結" data-theme="hero-dark">
+<span class="accent-bar"></span>
+<div class="chrome"><div class="l"><span class="tag accent-tag">Source Material</span><span class="sep"></span><span>Cab Late · YouTube · 39:05</span></div><div class="r"><span>03 / 16</span></div></div>
+<div class="body">
+<div class="split-55" style="gap:96px;align-items:center">
+<div class="col">
+<div class="kicker fade-up" style="color:var(--accent-soft)">Cab Late · 2026-04-09</div>
+<div class="video-quote fade-up delay-1"><span class="qmark">"</span>我們早就在接觸 Harness 了，<br>誰跟你說<span class="serif-italic" style="color:var(--accent-soft)">這是新東西？</span></div>
+<a class="video-url fade-up delay-3" href="https://www.youtube.com/watch?v=rgyuQNXyYvc" target="_blank" rel="noopener">youtube.com/watch?v=rgyuQNXyYvc</a>
+<div class="video-meta fade-up delay-4"><span>Cab Late</span><span class="sep"></span><span>39 min 05 sec</span><span class="sep"></span><span>2026-04-09</span></div>
+</div>
+<div class="fade-in delay-2" style="display:flex;justify-content:center">
+<div class="qr-wrap">
+<img class="qr-img" alt="QR code → YouTube" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=svg&qzone=1&data=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DrgyuQNXyYvc" onerror="this.style.background='repeating-conic-gradient(#141413 0% 25%,#fff 0% 50%) 50% / 24px 24px';this.style.opacity='.6'"/>
+<div class="qr-cap">scan · 帶回家看</div>
+</div>
+</div>
+</div>
+</div>
+<div class="foot"><div class="title">原版 19 張投影片，今天壓成 16 頁 + ewill 場景</div><div>03 / 16 · SOURCE</div></div>
+<aside class="notes"><p>影片標題本身就是<strong>今天的論點</strong>，Cab Late 整支講的事情壓成一句就是：「<strong>你已經在做 harness engineering，只是還沒給它名字</strong>」。</p><p>我看完覺得這句對 ewill 很準，我們團隊就是<strong>個人技巧強、團隊共識弱</strong>，所以今天不是介紹影片內容，是借它的 6-Part 結構回頭盤一次 ewill 已經在哪裡踩到 harness 了。</p><p>影片 39 分鐘我壓成 90 分鐘是因為要塞 ewill 自己的場景，會後想看原版掃 QR。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="04 6-Part 路線" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Roadmap · 6 Parts</span><span class="sep"></span><span>從裸模型一路演化到 Claude Code</span></div><div class="r"><span>04 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">今天的路線</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;margin-bottom:18px;font-size:72px">每一階段都在<span class="hi">解前一階段的痛點</span>。</div>
+<div class="roadmap anim-flow">
+<div class="stage"><div class="num">01</div><div class="label">Part 1</div><div class="name">裸模型</div><div class="desc">一個 API 呼叫 = 一個原子。</div></div>
+<div class="stage"><div class="num">02</div><div class="label">Part 2</div><div class="name">設計輸入<br><span class="meta-mono" style="font-size:13px">PE / FT / RAG</span></div><div class="desc">三條路同一個目標。</div></div>
+<div class="stage"><div class="num">03</div><div class="label">Part 3</div><div class="name">模型動手<br><span class="meta-mono" style="font-size:13px">FC / MCP</span></div><div class="desc">模型只會說，程式才會做。</div></div>
+<div class="stage"><div class="num">04</div><div class="label">Part 4</div><div class="name">Agent Loop</div><div class="desc">while 迴圈跑起來。</div></div>
+<div class="stage"><div class="num">05</div><div class="label">Part 5</div><div class="name">Harness 越長越厚</div><div class="desc">Context · Hook · 記憶 · 驗證。</div></div>
+<div class="stage"><div class="num">06</div><div class="label">Part 6</div><div class="name">Claude Code 實例</div><div class="desc">前 5 部分組起來。</div></div>
+</div>
+<div class="callout fade-up delay-7" style="margin-top:14px;font-size:18px;padding:14px 22px">看點不在學每一層的技術，在看清楚<strong style="color:var(--accent)">這個演化軌跡</strong>。<span class="cite" style="margin-top:6px">Slide 15 會回扣 — 不會沉沒的投入</span></div>
+</div>
+<div class="foot"><div class="title">Slide 04 — 6-Part Roadmap</div><div>04 / 16 · ATLAS</div></div>
+<aside class="notes"><p>這 6 個階段不是技術選項，是<strong>時間順序</strong>，AI 應用就是這樣一階段一階段疊起來的。</p><p>每一階段都在解前一階段的痛點：Part 1 裸模型不夠用所以出現 Part 2 設計輸入，Part 2 沒辦法動手所以有 Part 3 FC，Part 3 一次性處理不了複雜任務所以有 Part 4 Agent Loop，Loop 跑起來副作用多所以有 Part 5 Harness，最後 Part 6 Claude Code 把前面五層組起來變一個產品。</p><p>看點不在學每一層的技術，<strong>在看清楚這個演化軌跡</strong>，每一層解的問題不會過時、解法會一直換，這就是收尾要回扣的：<strong>不會沉沒的投入是理解每層在解什麼</strong>，不是學某個工具。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="05 Part 1+2 設計輸入" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Part 1 + Part 2</span><span class="sep"></span><span>Atomic API → Design the Input</span></div><div class="r"><span>05 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">你早就在做的第一件事</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;margin-bottom:24px">設計輸入。</div>
+<div class="split" style="gap:64px">
+<div class="col">
+<div class="meta-mono fade-up delay-2">Part 1 — 裸模型</div>
+<div class="h3 fade-up delay-2" style="font-size:34px">2022 年的 ChatGPT API 長這樣</div>
+<div class="flow-atomic anim-flow" style="margin-top:8px">
+<span class="step">你的程式</span><span class="arr">→</span><span class="step">prompt</span><span class="arr">→</span><span class="step">模型</span><span class="arr">→</span><span class="step">文字</span><span class="arr">→</span><span class="step">你的程式</span>
+</div>
+<div class="small fade-up delay-5" style="margin-top:14px;font-style:italic">一問一答，問完就忘。</div>
+</div>
+<div class="col" style="gap:10px">
+<div class="meta-mono fade-up delay-2">Part 2 — 三條路同一個目標</div>
+<div class="three-roads anim-stagger-list">
+<div class="road-card active"><span class="badge">PE</span><div class="road-body"><div class="road-name">Prompt Engineering</div><div class="road-desc">動輸入 — 你寫 <code style="font-family:var(--mono);background:var(--warm-sand);padding:1px 6px;border-radius:3px;font-size:16px">CLAUDE.md</code> 就是這個。</div><span class="ewill-tag">↳ ewill 每天在做</span></div></div>
+<div class="road-card muted-card"><span class="badge">FT</span><div class="road-body"><div class="road-name">Fine-tuning</div><div class="road-desc">動模型 — 大部分團隊不會碰，成本太高。</div></div></div>
+<div class="road-card active"><span class="badge">RAG</span><div class="road-body"><div class="road-name">Retrieval-Augmented Generation</div><div class="road-desc">塞知識 — 你掛 MCP server / 給 agent 讀檔就是這個。</div><span class="ewill-tag">↳ ewill 也在做</span></div></div>
+</div>
+</div>
+</div>
+<div class="callout fade-up delay-8" style="margin-top:18px;font-size:22px;padding:18px 28px">其實你在做的這些事，就已經是一種 <strong style="color:var(--accent)">Harness Engineering</strong> 了。<span class="cite" style="margin-top:8px">— Cab Late · 整場 Framing</span></div>
+</div>
+<div class="foot"><div class="title">Slide 05 — Atomic → Design Input</div><div>05 / 16 · 你早就在做</div></div>
+<aside class="notes"><p>這頁是整場的<strong>框定點</strong>，Part 1 是 2022 年大家剛接觸 ChatGPT API 的樣子，一問一答問完就忘。</p><p>Part 2 三條路裡 Fine-tuning 對 ewill 不適用（成本太高、模型疊代太快），但 PE 跟 RAG 你們每天都在做，<strong>改 CLAUDE.md 就是 PE</strong>，給 agent 讀某個檔、掛某個 MCP server <strong>就是 RAG</strong>。</p><p>所以影片這頁打出「其實你在做的這些事，就已經是一種 Harness Engineering 了」就是整場的關鍵 framing，後面 4 個 part 都會一直回扣這件事——<strong>你早就在做、只是沒給名字</strong>。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="06 Part 3 FC 4 步驟" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Part 3 · Function Calling</span><span class="sep"></span><span>4-Step Anatomy</span></div><div class="r"><span>06 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">模型怎麼「動手」？</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;margin-bottom:14px;font-size:54px">它其實 <span class="serif-italic" style="color:var(--accent)">沒</span> 動。</div>
+<div class="fc-steps anim-stagger-list">
+<div class="fc-step">
+<div class="stepnum">01<span class="lbl">Send</span></div>
+<div class="step-text"><div class="step-title">你發送請求，帶<strong>工具定義</strong></div><div class="step-sub">告訴模型可用的工具有哪些。</div></div>
+<div class="step-code">client.chat(
+  messages=[<span class="s">"今天台北會下雨嗎？"</span>],
+  tools=[<span class="k">get_weather_def</span>]
+)</div>
+</div>
+<div class="fc-step highlight">
+<div class="stepnum">02<span class="lbl">Signal</span></div>
+<div class="step-text"><div class="step-title">模型回傳 <em>tool_calls</em> 信號</div><div class="step-sub">模型沒有去查 — 只是「<strong>說</strong>」它<strong>想查</strong>。</div></div>
+<div class="step-code"><span class="c">// 模型回傳</span>
+{ <span class="k">"tool_calls"</span>: [
+  { <span class="k">"name"</span>:<span class="s">"get_weather"</span>, <span class="k">"args"</span>:{<span class="k">"city"</span>:<span class="s">"Taipei"</span>} }
+]}</div>
+</div>
+<div class="fc-step">
+<div class="stepnum">03<span class="lbl">Execute</span></div>
+<div class="step-text"><div class="step-title"><strong>你的程式</strong>執行工具</div><div class="step-sub">Hook / approval / quality-gate 都長在這一步。</div></div>
+<div class="step-code">result = <span class="k">get_weather</span>(<span class="s">"Taipei"</span>)
+<span class="c">// → {"temp":22, "rain":True}</span></div>
+</div>
+<div class="fc-step">
+<div class="stepnum">04<span class="lbl">Feed</span></div>
+<div class="step-text"><div class="step-title">把結果<strong>塞回</strong>對話再發 API</div><div class="step-sub">這次的塞回就是下一輪的 context。</div></div>
+<div class="step-code">messages.append({
+  <span class="k">"role"</span>:<span class="s">"tool"</span>, <span class="k">"content"</span>: result
+})</div>
+</div>
+</div>
+<div class="callout fade-up delay-7" style="margin-top:14px;font-size:21px;padding:18px 28px">工具回傳的內容，本身就是一個<strong style="color:var(--accent)">提示詞</strong>。<span class="cite" style="margin-top:8px">— 你在 step 4 塞回去的不是純資料，是新一輪的 context</span></div>
+</div>
+<div class="foot"><div class="title">Slide 06 — Function Calling 4-Step</div><div>06 / 16 · ANATOMY</div></div>
+<aside class="notes"><p>這頁要花時間講，因為這是 99% 的人對 FC 的<strong>最大誤解</strong>。聽到 function calling 三個字大家以為模型在「呼叫」函數，像我們寫程式那樣函數真的被執行，<strong>不是的</strong>。</p><p>模型只回傳一個結構化的字串說「我想呼叫 get_weather('Taipei')」，是<strong>你的程式</strong>去執行這個呼叫、拿到結果、塞回對話，模型本身連網路都沒連、連檔案系統都沒碰，它只會「想」跟「說」。</p><p>這個誤解一旦修正，<strong>harness 在 Step 3 可以做的事就清楚了</strong>——驗證參數、拒絕執行、加 approval、記 transcript、rate limit，整個 hook、approval、quality-gate 都是長在 Step 3。</p><p>底部那句「工具回傳的內容本身就是一個提示詞」講的是同一件事，你 Step 4 塞回去的不是純資料，<strong>是新一輪的 context</strong>，會直接影響模型下一輪怎麼想。</p></aside>
+</section>
+
+<section class="slide dark" data-screen-label="07 完整流程 + 想說 vs 做餵" data-theme="dark">
+<div class="chrome"><div class="l"><span class="tag">Part 3 · Full Flow</span><span class="sep"></span><span>Think / Speak vs. Do / Feed</span></div><div class="r"><span>07 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up" style="color:var(--accent-soft)">Part 3 完整流程</div>
+<div class="h2 fade-up delay-1" style="max-width:1500px;color:#ece9dc;font-size:54px;margin-bottom:48px">走完這 6 步，你才看清誰在幹嘛。</div>
+<div class="flow-6 anim-flow" style="margin-bottom:80px">
+<div class="node"><div class="stepnum">Step 1</div><div class="nodebody">請求<br>+ 工具定義</div><div class="nodemono">→ to model</div></div>
+<div class="node"><div class="stepnum">Step 2</div><div class="nodebody">tool_calls<br>信號</div><div class="nodemono">← from model</div></div>
+<div class="node"><div class="stepnum">Step 3</div><div class="nodebody">執行工具</div><div class="nodemono">harness</div></div>
+<div class="node"><div class="stepnum">Step 4</div><div class="nodebody">工具<br>結果</div><div class="nodemono">→ append</div></div>
+<div class="node"><div class="stepnum">Step 5</div><div class="nodebody">結果<br>+ 備註</div><div class="nodemono">→ to model</div></div>
+<div class="node"><div class="stepnum">Step 6</div><div class="nodebody">最終<br>回答</div><div class="nodemono">← from model</div></div>
+</div>
+<div class="anim-quote">
+<div class="giant-quote">模型負責<span class="em accent">想</span>和<span class="em accent">說</span>，<br>你的程式負責<span class="em accent">做</span>和<span class="em accent">餵</span>。</div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 07 — One sentence to remember.</div><div>07 / 16 · DIVISION</div></div>
+<aside class="notes"><p>這句金句要記下來，後面 Agent Loop 跟 Hook 都會回扣。</p><p>模型只負責「決定要做什麼」這一件事——它「<strong>想</strong>」（reasoning），它「<strong>說</strong>」（輸出 tool_calls），你的 harness 負責三件事：<strong>真的去做</strong>（執行）、<strong>決定能不能做</strong>（approval / hook）、<strong>結果怎麼餵回去</strong>（context management）。</p><p>下次有人問你 Agent 是什麼、LLM 系統是什麼，<strong>這句話就是一句話的總結</strong>，記住這個分工，後面 Part 4、Part 5 就是這個分工在不同層的展開。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="08 Agent Loop = while" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Part 4 · Agent Loop</span><span class="sep"></span><span>它就是一個 while</span></div><div class="r"><span>08 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">Agent ≠ Chatbot</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;margin-bottom:48px;font-size:84px">差就差在 — 它<span class="hi">會自己跑</span>。</div>
+<div class="split-55" style="gap:48px">
+<div class="fade-up delay-2">
+<div class="meta-mono" style="margin-bottom:14px">claude_code/agent_loop.py</div>
+<div class="code-box">
+<div class="code-head">Pseudo</div>
+<pre><span class="kw">while not</span> done:
+    response = <span class="fn">model</span>(messages)
+    <span class="kw">if</span> response.has_tool_calls:
+        results = <span class="fn">execute</span>(response.tool_calls)
+        messages.<span class="fn">append</span>(results)
+    <span class="kw">else</span>:
+        <span class="kw">return</span> response  <span class="co"># done</span></pre>
+</div>
+</div>
+<div class="col" style="gap:8px">
+<div class="meta-mono" style="margin-bottom:6px">一個真實任務跑了 4 圈</div>
+<ul class="loop-iters anim-stagger-list" style="list-style:none">
+<li class="loop-iter"><div class="circle">1</div><div class="iter-text">查資料 <span class="arr">→</span> 結果塞回</div></li>
+<li class="loop-iter"><div class="circle">2</div><div class="iter-text">看原始碼 <span class="arr">→</span> 結果塞回</div></li>
+<li class="loop-iter"><div class="circle">3</div><div class="iter-text">改程式 + 跑測試 <span class="arr">→</span> 塞回</div></li>
+<li class="loop-iter done"><div class="circle">4</div><div class="iter-text">測試全過 <span class="arr">→</span> 回答 → break</div></li>
+</ul>
+<div class="small" style="margin-top:14px;font-style:italic">圈數可能 3 也可能 30 — 看任務複雜度。</div>
+</div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 08 — Agent Loop = while</div><div>08 / 16 · LOOP</div></div>
+<aside class="notes"><p>這就是 chatbot 跟 agent 的<strong>根本差別</strong>，chatbot 一問一答結束，<strong>agent 是個 while 迴圈</strong>會自己跑很多輪直到完成任務。</p><p>Claude Code 跟你互動時背後就是這個迴圈在跑，每一圈：模型看 messages、決定要呼叫工具還是直接回答、如果呼叫工具就 harness 執行加 append、進下一圈，圈數可能 3 可能 30 看任務複雜度。</p><p>這個迴圈要理解，因為後面 Part 5 講的 4 個新問題（context 爆炸、失憶、跑偏、驗證）<strong>全部都是 loop 跑久了的副作用</strong>，你寫 hook、你管 context、你做 approval，都是在這個迴圈的不同位置插門。</p></aside>
+</section>
+
+<section class="slide dark" data-screen-label="09 模型沒有時間感" data-theme="dark">
+<div class="chrome"><div class="l"><span class="tag">Part 4 · No Time Sense</span><span class="sep"></span><span>You vs. The Model</span></div><div class="r"><span>09 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up" style="color:var(--accent-soft)">Part 4 · 重要的事</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;color:#ece9dc;font-size:64px;margin-bottom:14px">模型<span style="color:var(--accent-soft)">沒有</span>時間感。</div>
+<div class="split" style="gap:32px;flex:1;min-height:0">
+<div class="anim-compare-l compare-box you">
+<div class="compare-label">你看到的</div>
+<div class="compare-title">一步步推進</div>
+<ul class="timeline-steps">
+<li><span class="ord">①</span><span>讀 README</span></li>
+<li><span class="ord">②</span><span>grep 函數</span></li>
+<li><span class="ord">③</span><span>改程式</span></li>
+<li><span class="ord">④</span><span>跑測試</span></li>
+<li><span class="ord">✓</span><span style="color:var(--accent-soft);font-style:italic">完成</span></li>
+</ul>
+<div class="small" style="margin-top:auto;padding-top:24px;color:var(--warm-silver);font-style:italic">有進度感、有時間軸。</div>
+</div>
+<div class="anim-compare-r compare-box model">
+<div class="compare-label">模型看到的</div>
+<div class="compare-title">一大坨文字</div>
+<div class="msgs-array"><span class="role">[system]</span>  ...
+<span class="role">[user]</span>    "幫我修這個 bug"
+<span class="role">[assistant]</span> tool_calls=[Read]
+<span class="role">[tool]</span>    "...檔案內容..."
+<span class="role">[assistant]</span> tool_calls=[Grep]
+<span class="role">[tool]</span>    "...搜尋結果..."
+<span class="role">[assistant]</span> tool_calls=[Edit]
+<span class="role">[tool]</span>    "...patch result..."
+<span class="role">[assistant]</span> tool_calls=[Bash]
+<span class="role">[tool]</span>    "...test output..."
+<span class="ellip">...每圈從頭讀一次...</span></div>
+</div>
+</div>
+<div class="callout fade-up delay-7" style="margin-top:10px;font-size:20px;background:rgba(217,119,87,.12);color:#ece9dc;padding:14px 22px">每一圈都從零開始，<strong style="color:var(--accent-soft)">讀一遍所有歷史</strong>。<span class="cite" style="color:var(--warm-silver);margin-top:6px">— 它不記得自己上一圈想過什麼</span></div>
+</div>
+<div class="foot"><div class="title">Slide 09 — Why context engineering matters</div><div>09 / 16 · STATELESS</div></div>
+<aside class="notes"><p>這頁是 <strong>context engineering 的根本原因</strong>，模型本身沒有「上一輪我做了什麼」這個概念，它每一圈都是把整個 messages 陣列從頭讀一遍。</p><p>它不記得自己上一圈想了什麼，只能從前一圈的輸出反推，所以 <strong>context 管理才那麼重要</strong>，你該記得的東西必須塞進每一輪的 messages，不然模型就忘了。</p><p>Claude Code 的 <strong>auto-compact、prompt cache、各工具明確的 result format</strong>，全部都是在處理「模型每圈從零讀」這件事，下次你的 agent「忘記」剛才討論過的東西，<strong>先檢查 context 是不是被截掉了，不是它笨</strong>。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="10 Loop 的 4 個副作用" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Part 5 · Side Effects of the Loop</span><span class="sep"></span><span>4 個必然會出現的問題</span></div><div class="r"><span>10 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">Loop 跑起來之後</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;margin-bottom:48px;font-size:84px">新問題就<span class="hi">來了</span>。</div>
+<div class="problems-grid anim-stagger-list">
+<div class="problem-card"><div class="num">01</div><div class="pname">上下文爆炸</div><div class="pdesc">每圈都把整個歷史塞回去，token 越來越多。</div><div class="ptag">Context Engineering</div></div>
+<div class="problem-card"><div class="num">02</div><div class="pname">每輪都失憶</div><div class="pdesc">模型不記得「身分」、「偏好」、「過去決定」。</div><div class="ptag">Memory</div></div>
+<div class="problem-card"><div class="num">03</div><div class="pname">跑偏了沒人拉</div><div class="pdesc">模型自信地往錯方向走，沒人喊停。</div><div class="ptag">Hook · 約束</div></div>
+<div class="problem-card"><div class="num">04</div><div class="pname">做完不知道對不對</div><div class="pdesc">模型說「完成了」 — 但真的完成了嗎？</div><div class="ptag">驗證 · 糾偏</div></div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 10 — 4 problems = 4 engineering tracks</div><div>10 / 16 · SIDE EFFECTS</div></div>
+<aside class="notes"><p>這 4 個問題不是 bug，是 loop 本身帶出來的<strong>副作用</strong>，理解 Part 4 的 while loop 之後，這 4 個就是必然會出現的：</p><p>每圈塞 context 必然爆、模型沒記憶必然失憶、自己跑必然會偏、自己說完必然要被驗證，<strong>Harness Engineering 大半工作就在解這 4 個</strong>。</p><p>對 ewill 來說你已經踩到至少 3 個：<strong>寫 quality-gate</strong> 是解第 4 個（驗證）、<strong>寫 hook</strong> 是解第 3 個（約束）、想用 sub-agent 是解第 1 個（context 切分）。</p><p>問題是這 4 個你們目前各自為戰、一個一個 case 處理，今天看完希望你把它們<strong>當同一件事的不同切面</strong>來想，這才有可能變成團隊規範。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="11 Harness 三能力 + Hook" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Part 5 · 3 Capabilities</span><span class="sep"></span><span>+ Hook 在 loop 哪裡插門</span></div><div class="r"><span>11 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">Harness 給 Loop 加的</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;margin-bottom:32px;font-size:80px">三個能力<span style="color:var(--accent)">　+　</span>兩個 Hook。</div>
+<div class="cap-row anim-stagger-list" style="margin-bottom:24px">
+<div class="cap-card"><div class="cap-num">01 / 上下文管理</div><div class="cap-name">Context</div><div class="cap-desc">該在的時候有該在的東西 — 不是塞更多。</div></div>
+<div class="cap-card"><div class="cap-num">02 / 記憶機制</div><div class="cap-name">Memory</div><div class="cap-desc">CLAUDE.md / 設定 / 偏好 / 上次的決定。</div></div>
+<div class="cap-card"><div class="cap-num">03 / 驗證機制</div><div class="cap-name">Verification</div><div class="cap-desc">quality-gate / 測試 / 規則檢查。</div></div>
+</div>
+<div class="middle-quote fade-up delay-5" style="margin:18px 0">沒有記憶的 Agent，每次都像一個<strong style="color:var(--accent);font-style:normal">新來的實習生</strong>。</div>
+<div class="hook-row anim-stagger-list">
+<div class="hook-card pre"><div class="hook-label">Pre-Hook · 工具執行「前」</div><div class="hook-name">「能不能做」的門</div><div class="hook-code">// delete_file → 跳 approval
+hook("PreToolUse", danger_check)</div></div>
+<div class="hook-card post"><div class="hook-label">Post-Hook · 工具執行「後」</div><div class="hook-name">「做完算不算數」的門</div><div class="hook-code">// edit_file 後 → 自動跑 lint
+hook("PostToolUse", quality_gate)</div></div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 11 — Capabilities + Hooks</div><div>11 / 16 · WHERE TO INSERT</div></div>
+<aside class="notes"><p>ewill 看到 Hook 應該最有共鳴，我們的 <strong>quality-gate 就是 Post-Hook</strong>（編輯完跑 lint、type check、test），stop-orchestrator 也是某種 Hook，重點是<strong>你在用了但還沒系統化看待它</strong>。</p><p>Hook 不是「自動化」，是<strong>在迴圈裡插一個門讓某些事不會跑掉</strong>，Pre-Hook 是「能不能做」的門，Post-Hook 是「做完算不算數」的門。</p><p>三能力裡記憶機制 ewill 也在做，你寫 CLAUDE.md 就是給 agent 記憶。「<strong>沒有記憶的 agent 像新來的實習生</strong>」這個比喻試著想像，每天早上來上班的同事都不記得昨天做過什麼，整個團隊一週就崩了。</p><p>所以 CLAUDE.md 不是「設定檔」<strong>是「給實習生交接的筆記」</strong>，下次寫的時候從這個角度切，會比較知道要寫什麼、不寫什麼。</p></aside>
+</section>
+
+<section class="slide dark" data-screen-label="12 你看到的 vs 模型看到的" data-theme="dark">
+<div class="chrome"><div class="l"><span class="tag">Part 6 · The Gap</span><span class="sep"></span><span>3 句 vs. 6 層</span></div><div class="r"><span>12 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up" style="color:var(--accent-soft)">Part 6 · CC 不神奇</div>
+<div class="h1 fade-up delay-1" style="max-width:1500px;color:#ece9dc;font-size:80px;margin-bottom:48px">你打 3 句，模型實際讀<span style="color:var(--accent-soft)">這麼多</span>。</div>
+<div class="split" style="gap:96px;flex:1">
+<div class="anim-compare-l">
+<div class="meta-mono" style="margin-bottom:18px;color:var(--accent-soft)">使用者打的</div>
+<div class="bubbles-col">
+<div class="bubble"><span class="seq">Msg 1</span>幫我找 bug</div>
+<div class="bubble"><span class="seq">Msg 2</span>修一下</div>
+<div class="bubble"><span class="seq">Msg 3</span>跑測試</div>
+</div>
+<div class="small" style="margin-top:80px;color:var(--warm-silver);font-style:italic">你以為模型只看到這三句。</div>
+</div>
+<div class="anim-compare-r" style="position:relative">
+<div class="meta-mono" style="margin-bottom:48px;color:var(--warm-silver)">模型實際收到的（由下而上組合）</div>
+<div class="stack-vis anim-stack">
+<div class="stack-layer user-layer"><span>用戶訊息（你打的 3 句）</span><span class="lyr-tag">L6</span></div>
+<div class="stack-layer"><span>記憶（auto-memory entries）</span><span class="lyr-tag">L5</span></div>
+<div class="stack-layer"><span>工具定義（Read / Write / Bash / Grep ...）</span><span class="lyr-tag">L4</span></div>
+<div class="stack-layer"><span>壓縮摘要（前面對話的 summary）</span><span class="lyr-tag">L3</span></div>
+<div class="stack-layer"><span>CLAUDE.md（你的規則）</span><span class="lyr-tag">L2</span></div>
+<div class="stack-layer"><span>System Prompt（CC 內建）</span><span class="lyr-tag">L1</span></div>
+</div>
+</div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 12 — You vs The Stack</div><div>12 / 16 · LAYERS</div></div>
+<aside class="notes"><p>這頁是要讓 ewill <strong>看見 CC 不神奇</strong>，它每一輪丟給模型的 messages 大概長右邊那樣，是好幾層東西組起來的：</p><p>System Prompt 是 Anthropic 寫的你動不了、<strong>CLAUDE.md 是你寫的這是 ewill 最大的槓桿點</strong>、壓縮摘要是 auto-compact 跑的、工具定義是 CC 內建加你裝的 MCP、記憶是 auto-memory 系統存的、最上面才是你真正打的那三句話。</p><p>今天要看這頁是因為，CC「懂」你的專案是 CLAUDE.md 寫得好、它「記得」上次的討論是 auto-compact 塞了摘要、它「不會碰」某些檔是某個 hook 在 Pre 階段擋下來，<strong>看清楚之後下次你會開始問「我可以動哪一層」，而不是覺得它神奇</strong>。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="13 Claude Code Round 1-4" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag">Part 6 · Live Trace</span><span class="sep"></span><span>跑一輪真實任務</span></div><div class="r"><span>13 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">Claude Code · Round 1 → 4</div>
+<div class="h1 fade-up delay-1" style="font-size:72px;margin-bottom:24px">看清楚 model 跟 harness <span class="hi">各做什麼</span>。</div>
+<div class="round-task fade-up delay-2"><span class="task-label">Task</span><span class="task-text">找出某個 bug 並修好。</span></div>
+<div class="rounds anim-stagger-list">
+<div class="round-row">
+<div class="rname">R1<span class="rsub">Find</span></div>
+<div class="rmodel"><div class="rcol-label">Model 想什麼</div><div class="rcol-text"><span class="think">「我要先找這段邏輯在哪。」</span><span class="tool">tool_call: Grep(...)</span></div></div>
+<div class="rharness"><div class="rcol-label">Harness 做什麼</div><div class="rcol-text">跑 Grep，回傳檔案位置 — append 結果回 messages。</div></div>
+</div>
+<div class="round-row">
+<div class="rname">R2<span class="rsub">Read</span></div>
+<div class="rmodel"><div class="rcol-label">Model 想什麼</div><div class="rcol-text"><span class="think">「讀這檔看脈絡。」</span><span class="tool">tool_call: Read(...)</span></div></div>
+<div class="rharness"><div class="rcol-label">Harness 做什麼</div><div class="rcol-text">讀檔回傳 — append 結果。</div></div>
+</div>
+<div class="round-row highlight">
+<div class="rname">R3<span class="rsub">Edit · Test</span></div>
+<div class="rmodel"><div class="rcol-label">Model 想什麼</div><div class="rcol-text"><span class="think">「我懷疑是這裡有問題，改一下試試。」</span><span class="tool">tool_call: Edit(...) + Bash("test")</span></div></div>
+<div class="rharness"><div class="rcol-label">Harness 做什麼 <span style="color:var(--accent)">⟵ 兩個 hook 在這</span></div><div class="rcol-text"><span class="hook">Pre-Hook</span>　檢查目錄白名單、危險指令攔截。<br><span style="color:var(--charcoal)">執行 Edit 與 test。</span><br><span class="hook">Post-Hook</span>　跑 lint / type check / test 全跑。</div></div>
+</div>
+<div class="round-row">
+<div class="rname">R4<span class="rsub">Done</span></div>
+<div class="rmodel"><div class="rcol-label">Model 想什麼</div><div class="rcol-text"><span class="think">「測試過了。」</span><span class="tool">return final answer</span></div></div>
+<div class="rharness"><div class="rcol-label">Harness 做什麼</div><div class="rcol-text">break loop — 輸出最終答案。</div></div>
+</div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 13 — Live Trace · 4 rounds</div><div>13 / 16 · TRACE</div></div>
+<aside class="notes"><p>這頁重點在看 <strong>model 跟 harness 各自負責什麼</strong>。</p><p>Round 1 model 想要 grep、model 說 tool_call，<strong>是 harness 真的去 grep</strong>；Round 2 同樣模式讀檔；Round 3 最關鍵，model 想 edit 加跑測試，<strong>Pre-Hook 會在 edit 真的下去之前先檢查一道</strong>（例如目錄白名單、危險指令攔截），<strong>Post-Hook 會在跑完之後再做一道</strong>（例如 lint、type check、test 全跑）。</p><p>這兩個 hook 不是模型決定要不要跑、<strong>是 harness 寫死在迴圈裡的</strong>，下次看到別人寫的 hook 記得問一句：這個 hook 插在 loop 的哪個位置？Pre 還是 Post？防止什麼事跑掉？</p></aside>
+</section>
+
+<section class="slide dark" data-screen-label="14 把 Harness 拆掉" data-theme="dark">
+<div class="chrome"><div class="l"><span class="tag">Part 6 · Counterfactual</span><span class="sep"></span><span>把 Harness 拆掉呢？</span></div><div class="r"><span>14 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up" style="color:var(--accent-soft)">反過來證明它的價值</div>
+<div class="h1 fade-up delay-1" style="color:#ece9dc;font-size:60px;margin-bottom:18px">如果把 Harness <span style="color:var(--accent-soft);font-style:italic">拆掉</span>，剩下什麼？</div>
+<div class="harness-table anim-stagger-list">
+<div class="harness-row"><div class="hcol-1">CLAUDE.md</div><div class="hcol-2">沒專案知識。</div></div>
+<div class="harness-row"><div class="hcol-1">Prompt Cache</div><div class="hcol-2">每次都重打全部 context。</div></div>
+<div class="harness-row"><div class="hcol-1">工具系統</div><div class="hcol-2">不能改檔、不能跑 bash。</div></div>
+<div class="harness-row"><div class="hcol-1">訊息整理</div><div class="hcol-2">對話越長越亂。</div></div>
+<div class="harness-row"><div class="hcol-1">Agent Loop</div><div class="hcol-2">一問一答就結束。</div></div>
+<div class="harness-row"><div class="hcol-1">Hook</div><div class="hcol-2">沒有約束、跑偏沒人拉。</div></div>
+<div class="harness-row"><div class="hcol-1">並行調度</div><div class="hcol-2">一次只能做一件事。</div></div>
+<div class="harness-row"><div class="hcol-1">自動壓縮</div><div class="hcol-2">對話長了就 OOM。</div></div>
+</div>
+<div class="harness-final-callout fade-up delay-8">
+<span class="equals">全部拆掉　=</span>
+<span><strong style="color:var(--accent-soft)">ChatGPT 2022</strong> 年的水準</span>
+<span class="when">2022 → 2026 · 主要的 UX 跳躍是這 8 層堆出來的</span>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 14 — Without harness = ChatGPT 2022</div><div>14 / 16 · COUNTERFACTUAL</div></div>
+<aside class="notes"><p>這頁是<strong>反過來證明 harness 的價值</strong>，如果把上面 8 個東西拿掉，剩下的就是裸模型加一個 chat 介面，那就是 ChatGPT 2022 年剛出來時候的水準。</p><p>從 2022 到 2026 模型本身有變強，但<strong>主要的 UX 跳躍其實是這 8 個 harness 元素堆起來的</strong>，回扣最開始那句「模型負責想和說，你的程式負責做和餵」 — 過去 4 年的進步主要不是「想」變強，是「做和餵」的工程做得越來越完善。</p><p>對 ewill 來說，你的 harness（CLAUDE.md、hook、quality-gate、skill）每加一塊整體系統就強一塊，<strong>而且這些東西模型版本升級不會作廢</strong>，模型換、你的 harness 還在，這比追工具划算很多。</p></aside>
+</section>
+
+<section class="slide light" data-screen-label="15 落地優先級判準" data-theme="light">
+<div class="chrome"><div class="l"><span class="tag accent-tag">Eric 加值 · Day 2 深入</span><span class="sep"></span><span>柏崴提到「機制邊界不清」</span></div><div class="r"><span>15 / 16</span></div></div>
+<div class="body">
+<div class="kicker fade-up">同一件事該放哪一層？</div>
+<div class="h1 fade-up delay-1" style="font-size:46px;margin-bottom:16px;max-width:1500px;line-height:1.08">落地優先級判準 — <span class="hi">Rule / Hook / Skill</span> 怎麼選？</div>
+<div class="comparison-3 anim-stagger-list">
+<div class="cmp-card rule">
+<div class="cmp-head"><span>Rule</span><span class="cmp-tag">CLAUDE.md</span></div>
+<div class="cmp-row"><span class="lbl">機制</span><span class="val">文字指令給模型看</span></div>
+<div class="cmp-row"><span class="lbl">強制力</span><span class="val">弱（可被無視）</span></div>
+<div class="cmp-row"><span class="lbl">載入</span><span class="val">每次對話都載入</span></div>
+<div class="cmp-row"><span class="lbl">成本</span><span class="val">每次對話都吃 token</span></div>
+<div class="cmp-row"><span class="lbl">改完</span><span class="val">改 markdown 即生效</span></div>
+<div class="cmp-row"><span class="lbl">適合</span><span class="val">全域偏好 / 命名 / 風格</span></div>
+</div>
+<div class="cmp-card hook">
+<div class="cmp-head"><span>Hook</span><span class="cmp-tag">tool 邊界</span></div>
+<div class="cmp-row"><span class="lbl">機制</span><span class="val">tool 邊界插程式</span></div>
+<div class="cmp-row"><span class="lbl">強制力</span><span class="val"><strong>強（可物理擋）</strong></span></div>
+<div class="cmp-row"><span class="lbl">載入</span><span class="val">tool call 觸發才跑</span></div>
+<div class="cmp-row"><span class="lbl">成本</span><span class="val">只在 tool 觸發吃</span></div>
+<div class="cmp-row"><span class="lbl">改完</span><span class="val">改 settings.json 下次觸發即生效</span></div>
+<div class="cmp-row"><span class="lbl">適合</span><span class="val">安全攔截 / 自動 lint</span></div>
+</div>
+<div class="cmp-card skill">
+<div class="cmp-head"><span>Skill</span><span class="cmp-tag">劇本</span></div>
+<div class="cmp-row"><span class="lbl">機制</span><span class="val">揭露式注入的劇本</span></div>
+<div class="cmp-row"><span class="lbl">強制力</span><span class="val">中（依 description 觸發）</span></div>
+<div class="cmp-row"><span class="lbl">載入</span><span class="val"><strong>描述常駐、主體按需</strong></span></div>
+<div class="cmp-row"><span class="lbl">成本</span><span class="val"><strong>不用時不吃 token</strong></span></div>
+<div class="cmp-row"><span class="lbl">改完</span><span class="val">改 SKILL.md 即時偵測</span></div>
+<div class="cmp-row"><span class="lbl">適合</span><span class="val">多步劇本 / 條件性 know-how</span></div>
+</div>
+</div>
+<div class="priority-mid">
+<div>
+<div class="meta-mono fade-up delay-3" style="margin-bottom:6px">決策樹　·　由上而下問</div>
+<div class="decision-tree anim-stagger-list">
+<div class="tree-step"><span class="step-no">1</span><span><span class="tree-q">物理上要擋住、不能被繞過嗎？</span><span class="tree-a">是 <span class="yes">→ Hook</span>（Pre 擋下／Post 加工）</span></span></div>
+<div class="tree-step"><span class="step-no">2</span><span><span class="tree-q">條件性多步流程？想避免每次吃 token？</span><span class="tree-a">是 <span class="yes">→ Skill</span></span></span></div>
+<div class="tree-step"><span class="step-no">3</span><span><span class="tree-q">全域行為偏好、要每次對話都套用？</span><span class="tree-a">是 <span class="yes">→ Rule (CLAUDE.md)</span></span></span></div>
+</div>
+</div>
+<div>
+<div class="meta-mono fade-up delay-3" style="margin-bottom:6px">三個案例　·　對應到三層</div>
+<div class="case-map anim-stagger-list">
+<div class="case-row"><span class="case-q">「不要讀 .env」</span><span class="case-arrow">→</span><span class="case-pick-wrap"><span class="case-pick">Hook</span><span class="case-why">物理擋、零容忍</span></span></div>
+<div class="case-row"><span class="case-q">「commit 用 zh-TW Conventional」</span><span class="case-arrow">→</span><span class="case-pick-wrap"><span class="case-pick">Rule</span><span class="case-why">全域偏好、無 tool 邊界</span></span></div>
+<div class="case-row"><span class="case-q">「PR Review：diff + 摘要 + 標 risk」</span><span class="case-arrow">→</span><span class="case-pick-wrap"><span class="case-pick">Skill</span><span class="case-why">多步、動態 context、平常不用</span></span></div>
+</div>
+</div>
+</div>
+<div class="priority-callouts anim-stagger-list">
+<div class="priority-callout"><span class="pc-head">Skill 揭露式注入</span><span class="pc-sub">描述常駐、主體用到才載入 — 跟 Rule 永遠載入根本差別</span></div>
+<div class="priority-callout"><span class="pc-head">Skill 可包 Hook</span><span class="pc-sub">hooks frontmatter 限定 skill 生命週期生效</span></div>
+<div class="priority-callout"><span class="pc-head">Rule 適用就不要寫 Hook</span><span class="pc-sub">維護成本：Rule &lt; Skill &lt; Hook</span></div>
+</div>
+</div>
+<div class="foot"><div class="title">Slide 15 — 機制邊界不清，這頁回答</div><div>15 / 16 · DECISION</div></div>
+<aside class="notes"><p>這頁回答柏崴上次提的「機制邊界不清」 — 「<strong>skills、CLAUDE.md、Hook 之間的使用邊界不夠直觀</strong>」。今天我們把判準講清楚。</p><p>判準三步驟。第一：物理上要擋住、不能被繞過嗎？要擋就用 Hook，PreToolUse 擋下、PostToolUse 加工。第二：是條件性多步流程嗎？想避免每次對話都吃 token 嗎？是就用 Skill。第三：全域行為偏好、要每次都套用嗎？是就用 Rule。</p><p>特別講 Skill 的「<strong>揭露式注入</strong>」 — 這是它跟 Rule 最大差別。Rule 寫進 CLAUDE.md，每次跟 Claude 對話它都讀一次，token 永遠付。Skill 不一樣，<strong>只有描述常駐</strong>（最多 1,536 字元），<strong>主體要用到才載入</strong>。所以 Rule 適合一定永遠都要的事、Skill 適合「條件性才需要」的事，譬如 PR review 流程，平常根本用不到，寫進 CLAUDE.md 就是浪費 token。</p><p>Skill 還有兩個進階能力 — 一是可以<strong>包 Hook</strong>，但這個 Hook 只有 skill 啟動時生效，不像獨立 Hook 一直開著。二是可以<strong>注入動態 context</strong>，譬如 <code>!`gh pr diff`</code> 會先跑 shell 命令、把結果替換進 prompt，Claude 看到的是已展開的版本。這兩個 Rule 完全做不到。</p><p>看下面三個案例。「不要讀 .env」 — 要物理擋、零容忍，這是 Hook。「commit 用 zh-TW Conventional Commits」 — 全域行為偏好、沒有特定 tool 邊界，這是 Rule。「PR Review 流程」 — 多步、需要動態注入 diff、平常不用，這是 Skill。</p><p>特別記中間那句 — <strong>Rule 適用就不要寫 Hook</strong>。維護成本 Rule &lt; Skill &lt; Hook，能用便宜的層就用便宜的。下一段行動共識，每人挑一件回去試的事，順便指認落在三層哪一層。</p></aside>
+</section>
+
+<section class="slide hero light" data-screen-label="16 結尾金句" data-theme="hero-light">
+<span class="accent-bar"></span>
+<div class="chrome"><div class="l"><span class="tag accent-tag">Closing</span><span class="sep"></span><span>不會沉沒的投入</span></div><div class="r"><span>16 / 16</span></div></div>
+<div class="body">
+<div class="fade-up">
+<div class="meta-mono" style="margin-bottom:14px">模型版本演化　·　每一版底下都是同樣 6 層</div>
+<div class="evolution">
+<div class="gen"><div class="bar" style="height:30%"></div><div class="lbl">GPT-3</div><div class="yr">2020</div></div>
+<div class="gen"><div class="bar" style="height:42%"></div><div class="lbl">GPT-3.5</div><div class="yr">2022</div></div>
+<div class="gen"><div class="bar" style="height:62%"></div><div class="lbl">GPT-4</div><div class="yr">2023</div></div>
+<div class="gen"><div class="bar" style="height:74%"></div><div class="lbl">Claude 3</div><div class="yr">2024</div></div>
+<div class="gen"><div class="bar" style="height:88%"></div><div class="lbl">Claude 4</div><div class="yr">2025</div></div>
+<div class="gen"><div class="bar" style="height:96%;background:var(--accent)"></div><div class="lbl" style="color:var(--accent)">Opus 4.7</div><div class="yr">2026</div></div>
+</div>
+<div class="harness-layers-mini">
+<div class="layer">CLAUDE.md</div>
+<div class="layer">Prompt Cache</div>
+<div class="layer">Tools</div>
+<div class="layer">Messages</div>
+<div class="layer">Agent Loop</div>
+<div class="layer">Hook · Memory</div>
+</div>
+</div>
+<div class="spacer-lg"></div>
+<div class="closing-mid-quote fade-up delay-2">變的是外層，<span class="accent">不變的是每一層在解決的問題。</span></div>
+<div class="spacer-md"></div>
+<div class="anim-quote">
+<div class="closing-big-quote">你真正該投資的，不是學會某一個工具，<br>而是<span class="em">理解每一層 Harness 在解決什麼問題</span>。<br><span style="color:var(--accent)">這才是不會沉沒的投入。</span></div>
+</div>
+</div>
+<div class="foot"><div class="title">Q&amp;A · ewill Meetup · Eric · 2026-05</div><div>16 / 16 · END</div></div>
+<aside class="notes"><p>連回開場的痛點，<strong>「團隊規範跟不上」其實是「大家都在學工具、沒人在學每層 harness 在解決什麼」</strong>。</p><p>今天看完 6-Part，下次討論 ewill 規範怎麼立的時候，希望你帶這個 framing 進去：不要問「我們要不要用 X 工具」，<strong>問「X 工具是在解 6-Part 的哪一層？我們團隊在那一層的痛點是什麼？」</strong>這樣討論才收得起來。</p><p>第二句金句是給個人的，工具 3 個月一換、框架 6 個月一變，但「怎麼設計輸入」、「context 怎麼管」、「怎麼約束模型」、「怎麼驗證輸出」<strong>這些問題不會過時</strong>，所以投資在理解問題層比較划算，最後留 Q&amp;A，今天到這裡，謝謝。</p></aside>
+</section>
+
+</div></div>
+
+<nav id="nav" aria-label="slide navigation">
+<button class="arrow" id="prev" aria-label="prev">←</button>
+<span class="counter" id="counter">01 / 16</span>
+<span class="dots" id="dots"></span>
+<button class="arrow" id="next" aria-label="next">→</button>
+</nav>
+
+<div id="hint">N · NOTES　|　ESC · INDEX　|　← →</div>
+
+<div id="notes-panel" aria-hidden="true">
+<div class="notes-head"><span id="notes-label">Speaker Notes · 01</span><span>press <strong>N</strong> to close</span></div>
+<div class="notes-body" id="notes-body"></div>
+</div>
+
+<div id="overview" aria-hidden="true">
+<h2>所有 16 頁　·　點選任一頁直接跳轉　·　ESC 關閉</h2>
+<div class="grid" id="overview-grid"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  function fit(){
+    var s = Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    document.documentElement.style.setProperty('--scale', s);
+  }
+  fit();
+  window.addEventListener('resize', fit);
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var STORAGE_KEY = 'harness-deck.idx';
+  var current = (function(){
+    var saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+    if(!isNaN(saved) && saved >= 0 && saved < total) return saved;
+    return 0;
+  })();
+
+  var dotsEl = document.getElementById('dots');
+  for(var i=0;i<total;i++){
+    var dot = document.createElement('button');
+    dot.className = 'dot';
+    dot.setAttribute('aria-label', 'slide ' + (i+1));
+    (function(idx){
+      dot.addEventListener('click', function(){ goto(idx); });
+    })(i);
+    dotsEl.appendChild(dot);
+  }
+  var dotEls = dotsEl.querySelectorAll('.dot');
+
+  var overviewGrid = document.getElementById('overview-grid');
+  slides.forEach(function(s, idx){
+    var t = document.createElement('div');
+    var theme = s.dataset.theme || 'light';
+    t.className = 'thumb ' + theme.replace('-', ' ');
+    var label = s.dataset.screenLabel || ('Slide ' + (idx+1));
+    var num = String(idx+1).padStart(2,'0');
+    var name = label.replace(/^\d+\s*/, '');
+    t.innerHTML = '<div class="num">' + num + ' / 16</div><div class="name">' + name + '</div>';
+    t.addEventListener('click', function(){ goto(idx); closeOverview(); });
+    overviewGrid.appendChild(t);
+  });
+  var thumbs = overviewGrid.querySelectorAll('.thumb');
+
+  var notesPanel = document.getElementById('notes-panel');
+  var notesBody = document.getElementById('notes-body');
+  var notesLabel = document.getElementById('notes-label');
+
+  function renderNotes(idx){
+    var noteEl = slides[idx].querySelector('aside.notes');
+    notesBody.innerHTML = noteEl ? noteEl.innerHTML : '<p style="opacity:.6">— 沒有講者備註 —</p>';
+    var label = slides[idx].dataset.screenLabel || ('Slide ' + (idx+1));
+    notesLabel.textContent = 'Speaker Notes · ' + label;
+  }
+
+  function goto(idx){
+    if(idx < 0) idx = 0;
+    if(idx >= total) idx = total - 1;
+    slides.forEach(function(s, i){
+      if(i === idx){ s.classList.add('is-active'); }
+      else{ s.classList.remove('is-active'); }
+    });
+    dotEls.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
+    thumbs.forEach(function(t, i){ t.classList.toggle('active', i === idx); });
+    document.getElementById('counter').textContent =
+      String(idx+1).padStart(2,'0') + ' / ' + String(total).padStart(2,'0');
+    current = idx;
+    localStorage.setItem(STORAGE_KEY, idx);
+    renderNotes(idx);
+  }
+  goto(current);
+
+  function next(){ goto(current + 1); }
+  function prev(){ goto(current - 1); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if(k === 'ArrowRight' || k === ' ' || k === 'PageDown'){ e.preventDefault(); next(); return; }
+    if(k === 'ArrowLeft' || k === 'PageUp'){ e.preventDefault(); prev(); return; }
+    if(k === 'Home'){ e.preventDefault(); goto(0); return; }
+    if(k === 'End'){ e.preventDefault(); goto(total-1); return; }
+    if(k === 'n' || k === 'N'){ e.preventDefault(); toggleNotes(); return; }
+    if(k === 'Escape'){
+      e.preventDefault();
+      if(notesPanel.classList.contains('is-open')) toggleNotes();
+      else toggleOverview();
+      return;
+    }
+    if(k === 'p' || k === 'P'){ e.preventDefault(); window.print(); return; }
+    if(/^[0-9]$/.test(k)){
+      var n = parseInt(k,10);
+      if(n === 0) goto(9);
+      else goto(n-1);
+    }
+  });
+
+  function toggleNotes(){
+    notesPanel.classList.toggle('is-open');
+    notesPanel.setAttribute('aria-hidden',
+      notesPanel.classList.contains('is-open') ? 'false' : 'true');
+  }
+
+  var overview = document.getElementById('overview');
+  function toggleOverview(){
+    overview.classList.toggle('is-open');
+    overview.setAttribute('aria-hidden',
+      overview.classList.contains('is-open') ? 'false' : 'true');
+  }
+  function closeOverview(){
+    overview.classList.remove('is-open');
+    overview.setAttribute('aria-hidden','true');
+  }
+  overview.addEventListener('click', function(e){
+    if(e.target === overview) closeOverview();
+  });
+
+  var touchStartX = 0;
+  document.addEventListener('touchstart', function(e){
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].screenX - touchStartX;
+    if(Math.abs(dx) > 50){
+      if(dx < 0) next(); else prev();
+    }
+  }, {passive:true});
+
+  var wheelLock = false;
+  document.addEventListener('wheel', function(e){
+    if(wheelLock) return;
+    if(notesPanel.classList.contains('is-open')) return;
+    if(overview.classList.contains('is-open')) return;
+    if(Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if(Math.abs(e.deltaY) < 25) return;
+    wheelLock = true;
+    if(e.deltaY > 0) next(); else prev();
+    setTimeout(function(){ wheelLock = false; }, 700);
+  }, {passive:true});
+})();
+</script>
+</body>
+</html>
