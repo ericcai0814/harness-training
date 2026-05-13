@@ -1,6 +1,29 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head>
+<head><script>(function(){
+  function makeStore(){
+    var data = {};
+    var api = {
+      getItem: function(k){ return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem: function(k, v){ data[k] = String(v); },
+      removeItem: function(k){ delete data[k]; },
+      clear: function(){ data = {}; },
+      key: function(i){ return Object.keys(data)[i] || null; }
+    };
+    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(data).length; } });
+    return api;
+  }
+  function tryShim(name){
+    var works = false;
+    try { works = !!window[name] && typeof window[name].getItem === 'function'; void window[name].length; }
+    catch (_) { works = false; }
+    if (works) return;
+    try { Object.defineProperty(window, name, { configurable: true, value: makeStore() }); }
+    catch (_) { try { window[name] = makeStore(); } catch (__) {} }
+  }
+  tryShim('localStorage');
+  tryShim('sessionStorage');
+})();</script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=1920, initial-scale=1" />
 <title>Hooks 教學 — 9 站 · Claude Code Engineer Meetup</title>
@@ -300,11 +323,8 @@ mark.hl {
 
 .qa-panel {
   margin-top: auto;
-  flex-shrink: 0;
   border-top: 1px dashed var(--border-warm);
-  padding-top: 12px;
-  padding-bottom: 4px;
-  margin-bottom: 24px;
+  padding-top: 20px;
 }
 .slide.dark .qa-panel { border-top-color: var(--dark-surface); }
 
@@ -314,11 +334,11 @@ mark.hl {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font: 500 12px/1 var(--font-mono);
+  font: 500 14px/1 var(--font-mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--charcoal);
-  padding: 6px 12px;
+  padding: 8px 14px;
   background: var(--warm-sand);
   border-radius: 999px;
   user-select: none;
@@ -331,25 +351,25 @@ mark.hl {
 }
 
 .qa-content {
-  margin-top: 12px;
+  margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 10px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px 24px;
   animation: fadeUp 0.3s ease;
 }
 .qa-item {
   background: var(--surface);
   border: 1px solid var(--border-cream);
   border-radius: 8px;
-  padding: 11px 14px;
+  padding: 16px 18px;
 }
 .slide.dark .qa-item {
   background: rgba(255,255,255,0.02);
   border-color: var(--dark-surface);
 }
-.qa-q { font: 500 13px/1.4 var(--font-body); color: var(--fg); margin-bottom: 4px; }
+.qa-q { font: 500 14px/1.4 var(--font-body); color: var(--fg); margin-bottom: 6px; }
 .qa-q::before { content: "Q · "; color: var(--terracotta); font-family: var(--font-mono); font-weight: 500; }
-.qa-a { font: 400 13px/1.5 var(--font-body); color: var(--olive); }
+.qa-a { font: 400 14px/1.55 var(--font-body); color: var(--olive); }
 .qa-a::before { content: "A · "; color: var(--charcoal); font-family: var(--font-mono); font-weight: 500; }
 .slide.dark .qa-q { color: var(--surface); }
 .slide.dark .qa-q::before { color: var(--coral); }
@@ -978,10 +998,10 @@ code.inline {
     </p>
   </div>
 
-  <div class="grid-2 anim-stagger" style="margin-top: 18px; gap: 22px;">
-    <div class="col" style="gap: 8px;">
+  <div class="grid-2 anim-stagger" style="margin-top: 24px;">
+    <div class="col" style="gap: 10px;">
       <div class="kicker" style="color: var(--stone);">FILE 1 · .CLAUDE/SETTINGS.LOCAL.JSON</div>
-      <pre class="code light" style="font-size: 13px;"><span class="lang-tag">JSON</span><span class="tok-punct">{</span>
+      <pre class="code light" style="font-size: 14px;"><span class="lang-tag">JSON</span><span class="tok-punct">{</span>
   <span class="tok-prop">"hooks"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
     <span class="tok-prop">"PreToolUse"</span><span class="tok-punct">:</span> <span class="tok-punct">[</span>
       <span class="tok-punct">{</span>
@@ -999,9 +1019,9 @@ code.inline {
       <p class="body-sm" style="font-size: 13px;">↑ <code class="inline">$PWD</code> 下一站講</p>
     </div>
 
-    <div class="col" style="gap: 8px;">
+    <div class="col" style="gap: 10px;">
       <div class="kicker" style="color: var(--stone);">FILE 2 · HOOKS/READ_HOOK.JS</div>
-      <pre class="code light" style="font-size: 13px;"><span class="lang-tag">JAVASCRIPT</span>process.stdin.<span class="tok-fn">setEncoding</span>(<span class="tok-str">"utf8"</span>);
+      <pre class="code light" style="font-size: 14px;"><span class="lang-tag">JAVASCRIPT</span>process.stdin.<span class="tok-fn">setEncoding</span>(<span class="tok-str">"utf8"</span>);
 <span class="tok-kw">let</span> input = <span class="tok-str">""</span>;
 process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"data"</span>, (d) =&gt; (input += d));
 process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>, () =&gt; <span class="tok-punct">{</span>
@@ -1017,14 +1037,14 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
     </div>
   </div>
 
-  <div class="card-elevated anim-delayed" style="margin-top: 14px; padding: 14px 22px;">
+  <div class="card-elevated anim-delayed" style="margin-top: 20px; padding: 18px 26px;">
     <div class="kicker">SCHEMA 對照 · 為什麼只擋 READ,不擋 BASH / GREP?</div>
-    <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font: 400 13px/1.5 var(--font-mono); color: var(--charcoal);">
+    <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; font: 400 14px/1.5 var(--font-mono); color: var(--charcoal);">
       <div><b style="color:var(--terracotta);">Read.tool_input</b> → <code>{ "file_path": "..." }</code></div>
       <div><b style="color:var(--terracotta);">Bash.tool_input</b> → <code>{ "command": "..." }</code> <span class="meta">← schema 不同</span></div>
       <div><b style="color:var(--terracotta);">Grep.tool_input</b> → <code>{ "pattern": "...", "path": "..." }</code></div>
     </div>
-    <p class="body-sm" style="margin-top: 8px; font-size: 13px;">
+    <p class="body-sm" style="margin-top: 10px;">
       → 要全面擋:每個 tool 寫一個 matcher,或用 <code class="inline">permissions.deny: ["Read(**/.env)"]</code> 跨 tool 統一
     </p>
   </div>
@@ -1313,13 +1333,13 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
     </p>
   </div>
 
-  <div class="grid-2 anim-stagger" style="margin-top: 14px;">
-    <div class="card-elevated" style="padding: 16px 20px;">
+  <div class="grid-2 anim-stagger" style="margin-top: 20px;">
+    <div class="card-elevated" style="padding: 20px 22px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <span class="tag post">PostToolUse</span>
         <span class="meta">Hook 1 · TypeScript Type Checking</span>
       </div>
-      <div class="h-md" style="margin-top: 6px; font-size: 28px;">寫了 → 校對 → 餵 feedback</div>
+      <div class="h-md" style="margin-top: 8px; font-size: 30px;">寫了 → 校對 → 餵 feedback</div>
 
       <div style="margin-top: 12px;">
         <div class="kicker" style="color: var(--stone); font-size: 11px;">問題</div>
@@ -1349,13 +1369,13 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
       </div>
     </div>
 
-    <div class="card-elevated" style="padding: 16px 20px;">
+    <div class="card-elevated" style="padding: 20px 22px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <span class="tag pre">PreToolUse</span>
         <span class="meta">Hook 2 · Query Duplication Prevention</span>
         <span class="tag live" style="margin-left: auto;">⚡ LIVE</span>
       </div>
-      <div class="h-md" style="margin-top: 6px; font-size: 28px;">想寫 → 預檢 → 擋下 → 改用既有</div>
+      <div class="h-md" style="margin-top: 8px; font-size: 30px;">想寫 → 預檢 → 擋下 → 改用既有</div>
 
       <div style="margin-top: 12px;">
         <div class="kicker" style="color: var(--stone); font-size: 11px;">情境</div>
@@ -1387,8 +1407,8 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
     </div>
   </div>
 
-  <div class="grid-3 anim-stagger" style="margin-top: 12px;">
-    <div class="card" style="padding: 14px 16px;">
+  <div class="grid-3 anim-stagger" style="margin-top: 16px;">
+    <div class="card" style="padding: 16px 18px;">
       <div class="kicker" style="color: var(--stone); font-size: 11px;">中繼 · AGENT SDK 最小範例</div>
       <div class="h-xs" style="margin-top: 4px; font-size: 18px;">sdk.ts</div>
       <pre class="code light" style="margin-top: 6px; font-size: 11px; padding: 10px; line-height: 1.55;"><span class="tok-kw">import</span> <span class="tok-punct">{</span> query <span class="tok-punct">}</span> <span class="tok-kw">from</span>
@@ -1405,7 +1425,7 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
       </p>
     </div>
 
-    <div class="card" style="padding: 14px 16px; background: rgba(201,100,66,0.05); border-color: rgba(201,100,66,0.25);">
+    <div class="card" style="padding: 16px 18px; background: rgba(201,100,66,0.05); border-color: rgba(201,100,66,0.25);">
       <div class="kicker">⚡ LIVE · QUERY_HOOK</div>
       <div class="h-xs" style="margin-top: 4px; font-size: 18px;">即將跑</div>
       <ol style="list-style: decimal inside; margin-top: 8px; font: 400 12px/1.5 var(--font-body); color: var(--fg-warm);">
@@ -1415,7 +1435,7 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
       </ol>
     </div>
 
-    <div class="card" style="padding: 14px 16px;">
+    <div class="card" style="padding: 16px 18px;">
       <div class="kicker" style="color: var(--stone); font-size: 11px;">REPO 順手還有兩個</div>
       <ul class="list-clean" style="margin-top: 8px;">
         <li style="font-size: 12px;"><b>Prettier auto-format</b> — Post · 一行 shell pipeline:<br>
@@ -1424,6 +1444,14 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
         </li>
         <li style="font-size: 12px;"><b>jq logger</b> — matcher: <code class="inline" style="font-size: 10px;">*</code>,把 stdin 寫到 pre-log.json / post-log.json → 第 8 站講</li>
       </ul>
+    </div>
+  </div>
+
+  <div class="card-elevated anim-delayed" style="margin-top: 16px; background: var(--deep-dark); color: var(--surface); border: none; padding: 16px 28px;">
+    <div class="kicker" style="color: var(--coral);">關鍵差異 · PRE/POST 不對稱 · 能力決定時機</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 6px; font: 400 16px/1.5 var(--font-body); color: var(--warm-silver);">
+      <div><b style="color:var(--surface);">Hook 1(Post)</b> — 寫了 → 校對 → 餵 feedback → 下個 edit 改正</div>
+      <div><b style="color:var(--surface);">Hook 2(Pre)</b> — 想寫 → 預檢 → 擋下 → 直接改用既有</div>
     </div>
   </div>
 
@@ -1456,7 +1484,7 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
 
   <div class="anim-fade-up">
     <div class="kicker">STATION 08 · META</div>
-    <h1 class="h-xl" style="margin-top: 12px;">9 種 hook event</h1>
+    <h1 class="h-xl" style="margin-top: 12px;">9 種 hook event · 怎麼摸透陌生的</h1>
     <p class="lead" style="margin-top: 12px; color: var(--warm-silver); max-width: 1300px;">
       Pre/Post 不是全部。其他 7 種 event 各有用途,但 stdin 結構也不同 — <mark class="hl">先 log 後寫</mark>是標準手法。
     </p>
@@ -1527,9 +1555,18 @@ process.stdin.<span class="tok-fn">on</span>(<span class="tok-str">"end"</span>,
     </div>
   </div>
 
-  <p class="body-sm anim-delayed" style="margin-top: 14px; color: var(--warm-silver); font-size: 14px; font-style: italic;">
-    → workflow:配 logger → cat log → 寫邏輯 → 撤 logger。比看文件可靠 — 文件可能漏新欄位、版本還會變。
-  </p>
+  <div class="card-elevated anim-delayed" style="margin-top: 16px; background: var(--dark-surface); border: none; padding: 16px 24px;">
+    <div class="kicker">寫新 HOOK 的標準 WORKFLOW · 4 步</div>
+    <ol style="list-style: decimal inside; margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; font: 400 14px/1.5 var(--font-body); color: var(--warm-silver);">
+      <li>配 logger,跑幾次目標 hook event</li>
+      <li>cat log 看真實 stdin 結構</li>
+      <li>根據實際欄位寫真正邏輯</li>
+      <li>寫完撤掉 logger,或留在 dev 用</li>
+    </ol>
+    <p class="body-sm" style="margin-top: 8px; color: var(--warm-silver); font-size: 13px;">
+      → 比看文件可靠 — 文件可能漏新欄位、不同版本不一樣
+    </p>
+  </div>
 
   <details class="qa-panel anim-delayed" open>
     <summary>常見問題</summary>
