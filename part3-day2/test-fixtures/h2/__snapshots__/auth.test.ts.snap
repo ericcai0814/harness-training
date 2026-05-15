@@ -1,0 +1,8 @@
+// Vitest Snapshot v1
+exports[`auth fixture token serialization`] = `
+{
+  "user": "alice",
+  "token": "sk-test-FAKE0000111122223333444455556666",
+  "issuedAt": "2024-01-01T00:00:00.000Z"
+}
+`;
