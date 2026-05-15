@@ -52,7 +52,7 @@ Eric 的 Claude Code / AI Engineering 教材集合。
 
 目前內建：
 
-- `.claude/skills/secret-detector/` 與 `.claude/agent/secret-scanner.md` — part3-day2 完成版範例的鏡像
+- `.claude/skills/secret-detector/` 與 `.claude/agents/secret-scanner.md` — part3-day2 完成版範例的鏡像
 - `.agents/skills/grill-with-docs/` — 從 `mattpocock/skills` 安裝（見 `skills-lock.json`）
 
 ---
